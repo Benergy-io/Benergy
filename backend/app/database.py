@@ -15,3 +15,23 @@ SessionLocal = sessionmaker(
 )
 
 Base = declarative_base()
+import sqlite3
+
+DB_PATH = "benergy.db"
+
+def init_db():
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS metrics (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        gpu_util INTEGER,
+        memory_used INTEGER,
+        temperature INTEGER,
+        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+
+    conn.commit()
+    conn.close()
