@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Benergy</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #00d9ff;
+            --dark: #0a1628;
+            --surface: #0f1f2e;
+            --text: #ffffff;
+            --text-muted: #a0aec0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0a1628 0%, #0f1f2e 100%);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .bg-gradient {
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(circle at 20% 50%, rgba(0,217,255,0.08), transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(0,217,255,0.05), transparent 50%);
+            z-index: 0;
+        }
+
+        .container {
+            position: relative;
+            z-index: 2;
+            max-width: 1200px;
+            margin: auto;
+            padding: 0 24px;
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 24px 0;
+            border-bottom: 1px solid rgba(0,217,255,0.15);
+        }
+
+        .logo {
+            font-size: 26px;
+            font-weight: 800;
+            color: var(--primary);
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            padding: 12px 22px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: 0.3s;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: var(--dark);
+            box-shadow: 0 0 30px rgba(0,217,255,0.25);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+        }
+
+        .hero {
+            padding: 60px 0 30px;
+        }
+
+        .hero h1 {
+            font-size: 54px;
+            margin-bottom: 12px;
+        }
+
+        .hero p {
+            color: var(--text-muted);
+            font-size: 18px;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit,minmax(250px,1fr));
+            gap: 24px;
+            margin-top: 40px;
+        }
+
+        .card {
+            background: rgba(15,31,46,0.7);
+            border: 1px solid rgba(0,217,255,0.15);
+            border-radius: 16px;
+            padding: 28px;
+            backdrop-filter: blur(10px);
+            transition: 0.3s;
+        }
+
+        .card:hover {
+            border-color: rgba(0,217,255,0.5);
+            transform: translateY(-4px);
+        }
+
+        .card-title {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .card-value {
+            font-size: 42px;
+            font-weight: 800;
+            color: var(--primary);
+        }
+
+        .section {
+            margin-top: 40px;
+        }
+
+        .section h2 {
+            margin-bottom: 20px;
+            font-size: 30px;
+        }
+
+        .panel {
+            background: rgba(15,31,46,0.7);
+            border: 1px solid rgba(0,217,255,0.15);
+            border-radius: 16px;
+            padding: 24px;
+        }
+
+        pre {
+            white-space: pre-wrap;
+            color: #dbeafe;
+            line-height: 1.7;
+            font-size: 14px;
+        }
+
+        footer {
+            padding: 60px 0 30px;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        @media(max-width:768px) {
+            .hero h1 {
+                font-size: 38px;
+            }
+
+            nav {
+                flex-direction: column;
+                gap: 16px;
+            }
+
+            .nav-buttons {
+                width: 100%;
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="bg-gradient"></div>
+
+<div class="container">
+
+    <nav>
+        <div class="logo">BENERGY</div>
+
+        <div class="nav-buttons">
+            <a href="/" class="btn btn-secondary">← Back Home</a>
+            <button onclick="refreshAll()" class="btn btn-primary">
+                Refresh Metrics
+            </button>
+        </div>
+    </nav>
+
+    <section class="hero">
+        <h1>GPU Monitoring Dashboard</h1>
+        <p>
+            Real-time visibility into GPU usage, memory pressure,
+            thermal behavior, and optimization insights.
+        </p>
+    </section>
+
+    <div class="dashboard-grid">
+
+        <div class="card">
+            <div class="card-title">GPU Utilization</div>
+            <div class="card-value" id="gpu-util">--%</div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">Memory Used</div>
+            <div class="card-value" id="gpu-memory">-- MB</div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">Temperature</div>
+            <div class="card-value" id="gpu-temp">--°C</div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">System Status</div>
+            <div class="card-value" id="gpu-status">LIVE</div>
+        </div>
+
+    </div>
+
+    <div class="section">
+        <h2>AI Insights</h2>
+
+        <div class="panel">
+            <pre id="insights">
+Loading insights...
+            </pre>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>GPU History</h2>
+
+        <div class="panel">
+            <pre id="history">
+Loading history...
+            </pre>
+        </div>
+    </div>
+
+    <footer>
+        © 2026 Benergy — GPU observability platform for modern AI teams.
+    </footer>
+
+</div>
+
+<script>
+
+const BASE_URL =
+"https://effective-meme-p7rx79xqqx4rhrgq6-8001.app.github.dev";
+
+async function loadMetrics() {
+
+    try {
+
+        const res = await fetch(BASE_URL + "/metrics");
+        const data = await res.json();
+
+        document.getElementById("gpu-util").innerText =
+            data.gpu_utilization + "%";
+
+        document.getElementById("gpu-memory").innerText =
+            data.memory_used + " MB";
+
+        document.getElementById("gpu-temp").innerText =
+            data.temperature + "°C";
+
+    } catch (err) {
+
+        document.getElementById("gpu-status").innerText = "OFFLINE";
+    }
+}
+
+async function loadInsights() {
+
+    try {
+
+        const res = await fetch(BASE_URL + "/insights");
+        const data = await res.json();
+
+        document.getElementById("insights").innerText =
+            JSON.stringify(data, null, 2);
+
+    } catch (err) {
+
+        document.getElementById("insights").innerText =
+            "Insights unavailable";
+    }
+}
+
+async function loadHistory() {
+
+    try {
+
+        const res = await fetch(BASE_URL + "/history");
+        const data = await res.json();
+
+        document.getElementById("history").innerText =
+            JSON.stringify(data, null, 2);
+
+    } catch (err) {
+
+        document.getElementById("history").innerText =
+            "History unavailable";
+    }
+}
+
+function refreshAll() {
+
+    loadMetrics();
+    loadInsights();
+    loadHistory();
+}
+
+refreshAll();
+
+setInterval(refreshAll, 5000);
+
+</script>
+
+</body>
+</html>

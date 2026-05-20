@@ -1,135 +1,662 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Benergy GPU Dashboard</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Benergy - GPU Waste Tracker for AI Teams</title>
     <style>
-        body {
+        * {
             margin: 0;
-            font-family: Arial, sans-serif;
-            background: #0b1220;
-            color: #ffffff;
-            padding: 20px;
+            padding: 0;
+            box-sizing: border-box;
         }
 
-        h1 {
-            color: #38bdf8;
-            margin-bottom: 20px;
+        :root {
+            --primary: #00d9ff;
+            --dark: #0a1628;
+            --surface: #0f1f2e;
+            --text: #ffffff;
+            --text-muted: #a0aec0;
+            --accent: #00d9ff;
+            --accent-dark: #00b8cc;
         }
 
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: linear-gradient(135deg, #0a1628 0%, #0f1f2e 100%);
+            color: var(--text);
+            line-height: 1.6;
+            overflow-x: hidden;
         }
 
-        .card {
-            background: #111827;
-            padding: 20px;
-            border-radius: 12px;
+        /* Animated background elements */
+        .bg-gradient {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(0, 217, 255, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(0, 217, 255, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
         }
 
-        .value {
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* Navigation */
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 24px 0;
+            border-bottom: 1px solid rgba(0, 217, 255, 0.15);
+            backdrop-filter: blur(10px);
+        }
+
+        .logo {
             font-size: 26px;
-            margin-top: 10px;
-            font-weight: bold;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
-        .section {
-            margin-top: 20px;
-            background: #111827;
-            padding: 15px;
-            border-radius: 12px;
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: pulse 2s ease-in-out infinite;
+            filter: hue-rotate(-60deg) saturate(1.2);
+        }
+        
+        .logo-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
         }
 
-        button {
-            background: #38bdf8;
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 32px;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary);
+        }
+
+        /* Hero Section */
+        .hero {
+            padding: 140px 0 100px;
+            text-align: center;
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(40px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .hero h1 {
+            font-size: clamp(48px, 10vw, 80px);
+            font-weight: 800;
+            letter-spacing: -2px;
+            margin-bottom: 24px;
+            line-height: 1.1;
+        }
+
+        .hero .highlight {
+            background: linear-gradient(135deg, var(--primary) 0%, #00b8cc 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero p {
+            font-size: 18px;
+            color: var(--text-muted);
+            max-width: 600px;
+            margin: 0 auto 40px;
+            line-height: 1.8;
+        }
+
+        /* CTA Buttons */
+        .cta-buttons {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 80px;
+        }
+
+        .btn {
+            padding: 14px 36px;
             border: none;
-            padding: 10px 15px;
             border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
             cursor: pointer;
-            margin-bottom: 15px;
-            font-weight: bold;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
         }
 
-        button:hover {
-            background: #0ea5e9;
+        .btn-primary {
+            background: var(--primary);
+            color: var(--dark);
+            box-shadow: 0 0 40px rgba(0, 217, 255, 0.3);
         }
 
-        pre {
-            white-space: pre-wrap;
-            word-wrap: break-word;
-            color: #cbd5e1;
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 60px rgba(0, 217, 255, 0.5);
+            background: #00c5e8;
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--primary);
+            border: 2px solid var(--primary);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(0, 217, 255, 0.1);
+        }
+
+        /* Stats Section */
+        .stats-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 24px;
+            margin-bottom: 80px;
+            padding: 40px;
+            background: rgba(15, 31, 46, 0.6);
+            border: 1px solid rgba(0, 217, 255, 0.15);
+            border-radius: 16px;
+            backdrop-filter: blur(10px);
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 32px;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        /* Section */
+        .section {
+            padding: 80px 0;
+            border-top: 1px solid rgba(0, 217, 255, 0.1);
+        }
+
+        .section h2 {
+            font-size: clamp(36px, 7vw, 52px);
+            font-weight: 800;
+            margin-bottom: 60px;
+            text-align: center;
+            letter-spacing: -1px;
+        }
+
+        /* Problem Cards */
+        .problem-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+            margin-bottom: 48px;
+        }
+
+        .problem-card {
+            background: rgba(15, 31, 46, 0.5);
+            border: 1px solid rgba(0, 217, 255, 0.15);
+            border-radius: 12px;
+            padding: 32px;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .problem-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 217, 255, 0.1), transparent);
+            transition: left 0.5s;
+        }
+
+        .problem-card:hover {
+            border-color: rgba(0, 217, 255, 0.4);
+            background: rgba(0, 217, 255, 0.05);
+            transform: translateY(-4px);
+        }
+
+        .problem-card h3 {
+            font-size: 18px;
+            margin-bottom: 16px;
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        .problem-card p {
+            font-size: 14px;
+            color: var(--text-muted);
+            line-height: 1.8;
+        }
+
+        /* Features Section */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+        }
+
+        .feature {
+            background: rgba(0, 217, 255, 0.08);
+            border: 1px solid rgba(0, 217, 255, 0.2);
+            border-radius: 12px;
+            padding: 32px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .feature:hover {
+            border-color: var(--primary);
+            background: rgba(0, 217, 255, 0.12);
+            transform: translateY(-4px);
+        }
+
+        .feature-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            display: block;
+        }
+
+        .feature h3 {
+            margin-bottom: 12px;
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .feature p {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        /* Pricing */
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+            margin-top: 48px;
+        }
+
+        .pricing-card {
+            background: rgba(15, 31, 46, 0.6);
+            border: 1px solid rgba(0, 217, 255, 0.15);
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .pricing-card:hover {
+            border-color: var(--primary);
+            background: rgba(0, 217, 255, 0.08);
+            transform: translateY(-6px);
+        }
+
+        .pricing-card.featured {
+            border-color: var(--primary);
+            background: rgba(0, 217, 255, 0.1);
+            transform: scale(1.05);
+            box-shadow: 0 0 40px rgba(0, 217, 255, 0.2);
+        }
+
+        .badge {
+            display: inline-block;
+            background: var(--primary);
+            color: var(--dark);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 800;
+            margin-bottom: 16px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .price {
+            font-size: 48px;
+            font-weight: 800;
+            margin: 20px 0;
+            color: var(--primary);
+        }
+
+        .price-period {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .pricing-features {
+            list-style: none;
+            margin: 32px 0;
+            text-align: left;
+        }
+
+        .pricing-features li {
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(0, 217, 255, 0.1);
+            font-size: 14px;
+        }
+
+        .pricing-features li::before {
+            content: '✓ ';
+            color: var(--primary);
+            margin-right: 8px;
+            font-weight: 700;
+        }
+
+        /* CTA Section */
+        .cta-section {
+            text-align: center;
+            padding: 80px 0;
+        }
+
+        .cta-section h2 {
+            margin-bottom: 24px;
+        }
+
+        .cta-section p {
+            font-size: 18px;
+            color: var(--text-muted);
+            margin-bottom: 40px;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Footer */
+        footer {
+            border-top: 1px solid rgba(0, 217, 255, 0.1);
+            padding: 40px 0;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+
+            .hero {
+                padding: 80px 0 60px;
+            }
+
+            .problem-card,
+            .feature {
+                padding: 24px;
+            }
+
+            .pricing-card.featured {
+                transform: scale(1);
+            }
+
+            .section {
+                padding: 60px 0;
+            }
+
+            .stats-section {
+                padding: 24px;
+            }
+
+            .cta-buttons {
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .btn {
+                width: 100%;
+            }
         }
     </style>
 </head>
-
 <body>
+    <div class="bg-gradient"></div>
 
-<h1>🔥 Benergy GPU Dashboard</h1>
+    <div class="container">
+        <!-- Navigation -->
+        <nav>
+            <div class="logo">
+                <span class="logo-icon">
+                    <img src="data:image/png;base64,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" alt="Benergy" />
+                </span>
+                BENERGY
+            </div>
+            <ul class="nav-links">
+                <li><a href="#features">Features</a></li>
+                <li><a href="#pricing">Pricing</a></li>
+                <li><a href="#how">How It Works</a></li>
+            </ul>
+        </nav>
 
-<button onclick="loadAll()">Refresh Now</button>
+        <!-- Hero Section -->
+        <section class="hero">
+            <h1>Stop <span class="highlight">wasting GPU compute</span></h1>
+            <p>See exactly where your compute is going. Real-time insights on GPU idle time, job efficiency, and actionable recommendations—built for small AI teams who can't afford to waste money.</p>
+            <div class="cta-buttons">
+                <button class="btn btn-primary">🚀 Start Free Trial</button>
+                <a href="/app.html">
+    <button class="btn btn-secondary">
+        📊 Launch Dashboard
+    </button>
+</a>
+            </div>
+        </section>
 
-<div class="grid">
-    <div class="card">
-        <h3>GPU Usage</h3>
-        <div class="value" id="gpu">--</div>
+        <!-- Stats -->
+        <div class="stats-section">
+            <div class="stat">
+                <div class="stat-number">30-40%</div>
+                <div class="stat-label">Average GPU waste in teams</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number">$1.2k</div>
+                <div class="stat-label">Monthly savings (avg user)</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number">5 min</div>
+                <div class="stat-label">Time to connect & start</div>
+            </div>
+        </div>
+
+        <!-- Problem Section -->
+        <section class="section">
+            <h2>The GPU Problem Nobody Talks About</h2>
+            <div class="problem-grid">
+                <div class="problem-card">
+                    <h3>💸 Hidden Costs</h3>
+                    <p>Your GPUs are idle 30-60% of the time. But you're paying per hour. That's money leaving your company every single day.</p>
+                </div>
+                <div class="problem-card">
+                    <h3>🤷 Zero Visibility</h3>
+                    <p>You don't know which jobs are actually using your GPUs efficiently. Enterprise tools are overkill. You need simplicity.</p>
+                </div>
+                <div class="problem-card">
+                    <h3>⏱️ Inefficient Scheduling</h3>
+                    <p>Training jobs run whenever. No insight into peak vs off-peak usage. You're not optimizing at all.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features Section -->
+        <section class="section" id="features">
+            <h2>Built for Your Team</h2>
+            <div class="features-grid">
+                <div class="feature">
+                    <span class="feature-icon">📊</span>
+                    <h3>Real-Time Dashboard</h3>
+                    <p>See GPU utilization, idle time, and job performance in one glance. No complexity, just data.</p>
+                </div>
+                <div class="feature">
+                    <span class="feature-icon">⚠️</span>
+                    <h3>Smart Alerts</h3>
+                    <p>Get notified when GPUs are underused or when jobs are wasting compute on inefficient hardware.</p>
+                </div>
+                <div class="feature">
+                    <span class="feature-icon">💡</span>
+                    <h3>Actionable Insights</h3>
+                    <p>"Batch these 5 jobs" • "Shift training to 2 AM" • "Your utilization is 42%"</p>
+                </div>
+                <div class="feature">
+                    <span class="feature-icon">🔌</span>
+                    <h3>Easy Integration</h3>
+                    <p>Works with NVIDIA, AWS, GCP, or local setups. No complex setup. Connect in 5 minutes.</p>
+                </div>
+                <div class="feature">
+                    <span class="feature-icon">🛡️</span>
+                    <h3>Privacy First</h3>
+                    <p>Your data stays yours. No cloud lock-in. We only track compute metrics, not code.</p>
+                </div>
+                <div class="feature">
+                    <span class="feature-icon">🚀</span>
+                    <h3>Save 30-40%</h3>
+                    <p>Simple optimizations add up. Batch better. Schedule smarter. Waste less.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Pricing Section -->
+        <section class="section" id="pricing">
+            <h2>Simple Pricing. No Surprises.</h2>
+            <div class="pricing-grid">
+                <div class="pricing-card">
+                    <h3>Solo</h3>
+                    <p style="color: var(--text-muted); margin-bottom: 16px; font-size: 14px;">For independent researchers</p>
+                    <div class="price">$19<span class="price-period">/mo</span></div>
+                    <ul class="pricing-features">
+                        <li>1-3 GPUs</li>
+                        <li>Real-time dashboard</li>
+                        <li>Basic alerts</li>
+                        <li>7-day history</li>
+                        <li>Email support</li>
+                    </ul>
+                    <button class="btn btn-secondary" style="width: 100%;">Get Started</button>
+                </div>
+
+                <div class="pricing-card featured">
+                    <div class="badge">MOST POPULAR</div>
+                    <h3>Team</h3>
+                    <p style="color: var(--text-muted); margin-bottom: 16px; font-size: 14px;">For small AI startups</p>
+                    <div class="price">$99<span class="price-period">/mo</span></div>
+                    <ul class="pricing-features">
+                        <li>Up to 20 GPUs</li>
+                        <li>Multi-GPU insights</li>
+                        <li>Smart recommendations</li>
+                        <li>90-day history</li>
+                        <li>Slack integration</li>
+                        <li>Priority support</li>
+                    </ul>
+                    <button class="btn btn-primary" style="width: 100%;">Start Free Trial</button>
+                </div>
+
+                <div class="pricing-card">
+                    <h3>Enterprise</h3>
+                    <p style="color: var(--text-muted); margin-bottom: 16px; font-size: 14px;">For growing teams</p>
+                    <div class="price">Custom<span class="price-period">/mo</span></div>
+                    <ul class="pricing-features">
+                        <li>Unlimited GPUs</li>
+                        <li>Advanced analytics</li>
+                        <li>Custom reports</li>
+                        <li>Unlimited history</li>
+                        <li>API access</li>
+                        <li>Dedicated support</li>
+                    </ul>
+                    <button class="btn btn-secondary" style="width: 100%;">Contact Sales</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Final CTA -->
+        <section class="cta-section">
+            <h2>Start Optimizing Your GPU Usage Today</h2>
+            <p>Free 14-day trial. No credit card required. See exactly how much compute you're wasting.</p>
+            <button class="btn btn-primary" style="font-size: 18px; padding: 16px 48px;">Get Started Free →</button>
+        </section>
+
+        <!-- Footer -->
+        <footer>
+            <p>&copy; 2026 Benergy — GPU observability and compute optimization for modern AI teams.</p>
+        </footer>
     </div>
 
-    <div class="card">
-        <h3>Memory Used</h3>
-        <div class="value" id="memory">--</div>
-    </div>
+    <script>
+        // Smooth scroll
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
 
-    <div class="card">
-        <h3>Temperature</h3>
-        <div class="value" id="temp">--</div>
-    </div>
-</div>
-
-<div class="section">
-    <h3>🧠 Insights</h3>
-    <pre id="insights">Loading...</pre>
-</div>
-
-<div class="section">
-    <h3>📊 History</h3>
-    <pre id="history">Loading...</pre>
-</div>
-
-<script>
-const BASE_URL = "https://effective-meme-p7rx79xqqx4rhrgq6-8001.app.github.dev";
-
-async function loadMetrics() {
-    const res = await fetch(BASE_URL + "/metrics");
-    const data = await res.json();
-
-    document.getElementById("gpu").innerText = data.gpu_utilization + "%";
-    document.getElementById("memory").innerText = data.memory_used + " MB";
-    document.getElementById("temp").innerText = data.temperature + "°C";
-}
-
-async function loadInsights() {
-    const res = await fetch(BASE_URL + "/insights");
-    const data = await res.json();
-    document.getElementById("insights").innerText = JSON.stringify(data, null, 2);
-}
-
-async function loadHistory() {
-    const res = await fetch(BASE_URL + "/history");
-    const data = await res.json();
-    document.getElementById("history").innerText = JSON.stringify(data, null, 2);
-}
-
-function loadAll() {
-    loadMetrics();
-    loadInsights();
-    loadHistory();
-}
-
-// auto refresh
-loadAll();
-setInterval(loadAll, 5000);
-</script>
-
+        // Button interactions
+        document.querySelectorAll('.btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const action = this.textContent.trim();
+                if (action.includes('Free') || action.includes('Trial')) {
+                    alert('✅ Great! Join our early access.\n\nEmail: early-access@benergy.io\n\n(Coming very soon!)');
+                } else if (action.includes('Demo')) {
+                    alert('📹 Demo coming July 1st!\n\nJoin the waitlist at benergy.io');
+                }
+            });
+        });
+    </script>
 </body>
 </html>
