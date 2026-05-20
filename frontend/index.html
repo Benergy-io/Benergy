@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Benergy GPU Dashboard</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #0b1220;
+            color: #ffffff;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #38bdf8;
+            margin-bottom: 20px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+
+        .card {
+            background: #111827;
+            padding: 20px;
+            border-radius: 12px;
+        }
+
+        .value {
+            font-size: 26px;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        .section {
+            margin-top: 20px;
+            background: #111827;
+            padding: 15px;
+            border-radius: 12px;
+        }
+
+        button {
+            background: #38bdf8;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background: #0ea5e9;
+        }
+
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            color: #cbd5e1;
+        }
+    </style>
+</head>
+
+<body>
+
+<h1>🔥 Benergy GPU Dashboard</h1>
+
+<button onclick="loadAll()">Refresh Now</button>
+
+<div class="grid">
+    <div class="card">
+        <h3>GPU Usage</h3>
+        <div class="value" id="gpu">--</div>
+    </div>
+
+    <div class="card">
+        <h3>Memory Used</h3>
+        <div class="value" id="memory">--</div>
+    </div>
+
+    <div class="card">
+        <h3>Temperature</h3>
+        <div class="value" id="temp">--</div>
+    </div>
+</div>
+
+<div class="section">
+    <h3>🧠 Insights</h3>
+    <pre id="insights">Loading...</pre>
+</div>
+
+<div class="section">
+    <h3>📊 History</h3>
+    <pre id="history">Loading...</pre>
+</div>
+
+<script>
+const BASE_URL = "https://effective-meme-p7rx79xqqx4rhrgq6-8001.app.github.dev";
+
+async function loadMetrics() {
+    const res = await fetch(BASE_URL + "/metrics");
+    const data = await res.json();
+
+    document.getElementById("gpu").innerText = data.gpu_utilization + "%";
+    document.getElementById("memory").innerText = data.memory_used + " MB";
+    document.getElementById("temp").innerText = data.temperature + "°C";
+}
+
+async function loadInsights() {
+    const res = await fetch(BASE_URL + "/insights");
+    const data = await res.json();
+    document.getElementById("insights").innerText = JSON.stringify(data, null, 2);
+}
+
+async function loadHistory() {
+    const res = await fetch(BASE_URL + "/history");
+    const data = await res.json();
+    document.getElementById("history").innerText = JSON.stringify(data, null, 2);
+}
+
+function loadAll() {
+    loadMetrics();
+    loadInsights();
+    loadHistory();
+}
+
+// auto refresh
+loadAll();
+setInterval(loadAll, 5000);
+</script>
+
+</body>
+</html>
