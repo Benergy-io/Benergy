@@ -1,9 +1,8 @@
-<!DOCTYPE html>
-<html lang="en">
+<html lang="">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Benergy</title>
+    <meta name="viewpo, initial-scale=1.0">
+    <title>Dashboard - </title>
 
     <style>
         * {
@@ -13,8 +12,7 @@
         }
 
         :root {
-            --primary: #00d9ff;
-            --dark: #0a1628;
+            --primary:
             --surface: #0f1f2e;
             --text: #ffffff;
             --text-muted: #a0aec0;
@@ -214,8 +212,13 @@
             thermal behavior, and optimization insights.
         </p>
     </section>
-
     <div class="dashboard-grid">
+        <div class="section">
+    <h2>GPU Usage Graph</h2>
+    <div class="panel">
+        <canvas id="gpuChart" width="1000" height="250"></canvas>
+    </div>
+</div>
 
         <div class="card">
             <div class="card-title">GPU Utilization</div>
@@ -261,11 +264,6 @@ Loading history...
 
     <footer>
         © 2026 Benergy — GPU observability platform for modern AI teams.
-    </footer>
-
-</div>
-
-<script>
 
 const BASE_URL =
 "https://effective-meme-p7rx79xqqx4rhrgq6-8001.app.github.dev";
@@ -284,60 +282,4 @@ async function loadMetrics() {
             data.memory_used + " MB";
 
         document.getElementById("gpu-temp").innerText =
-            data.temperature + "°C";
-
-    } catch (err) {
-
-        document.getElementById("gpu-status").innerText = "OFFLINE";
-    }
-}
-
-async function loadInsights() {
-
-    try {
-
-        const res = await fetch(BASE_URL + "/insights");
-        const data = await res.json();
-
-        document.getElementById("insights").innerText =
-            JSON.stringify(data, null, 2);
-
-    } catch (err) {
-
-        document.getElementById("insights").innerText =
-            "Insights unavailable";
-    }
-}
-
-async function loadHistory() {
-
-    try {
-
-        const res = await fetch(BASE_URL + "/history");
-        const data = await res.json();
-
-        document.getElementById("history").innerText =
-            JSON.stringify(data, null, 2);
-
-    } catch (err) {
-
-        document.getElementById("history").innerText =
-            "History unavailable";
-    }
-}
-
-function refreshAll() {
-
-    loadMetrics();
-    loadInsights();
-    loadHistory();
-}
-
-refreshAll();
-
-setInterval(refreshAll, 5000);
-
-</script>
-
-</body>
-</html>
+            data.temp
