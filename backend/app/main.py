@@ -1,16 +1,14 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-import sqlite3
+from fastapi.staticfiles import StaticFiles
 import random
-import shutil
-import subprocess
+import time
+import os
 
-from app.database import init_db, DB_PATH
-
-app = FastAPI(title="Benergy API")
+app = FastAPI(title="Benergy API", version="1.0")
 
 # -----------------------------
-# CORS (frontend ready)
+# CORS (FRONTEND ACCESS)
 # -----------------------------
 app.add_middleware(
     CORSMiddleware,
@@ -21,91 +19,58 @@ app.add_middleware(
 )
 
 # -----------------------------
-# INIT DB
+# STATIC FILES (optional assets)
 # -----------------------------
-init_db()
+if not os.path.exists("static"):
+    os.makedirs("static")
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
 # -----------------------------
-# GPU DETECTOR
+# GPU PRICING MAP
 # -----------------------------
-def has_nvidia_gpu():
-    return shutil.which("nvidia-smi") is not None
+GPU_PRICING = {
+    "T4": 0.35,
+    "V100": 2.50,
+    "A100": 4.10,
+    "H100": 8.00,
+    "RTX 4090": 0.60
+}
+
+GPU_TYPE = "A100"
 
 
 # -----------------------------
-# ROOT / HEALTH / TEST
+# ROOT
 # -----------------------------
 @app.get("/")
 def root():
-    return {"message": "Benergy backend running"}
-
-
-@app.get("/health")
-def health():
-    return {"status": "ok"}
-
-
-@app.get("/test")
-def test():
-    return {"status": "backend is alive"}
+    return {
+        "status": "Benergy API Running",
+        "version": "1.0"
+    }
 
 
 # -----------------------------
-# METRICS (REAL + FALLBACK)
+# METRICS
 # -----------------------------
 @app.get("/metrics")
 def metrics():
 
-    if has_nvidia_gpu():
-        try:
-            result = subprocess.run(
-                [
-                    "nvidia-smi",
-                    "--query-gpu=utilization.gpu,memory.used,temperature.gpu",
-                    "--format=csv,noheader,nounits"
-                ],
-                capture_output=True,
-                text=True
-            )
+    gpu_util = random.randint(5, 95)
+    memory_used = random.randint(2000, 24000)
+    temperature = random.randint(45, 85)
 
-            gpu_util, mem_used, temp = result.stdout.strip().split(",")
-
-            gpu_util = int(gpu_util)
-            mem_used = int(mem_used)
-            temp = int(temp)
-
-            mode = "real_gpu"
-
-        except Exception:
-            gpu_util = 0
-            mem_used = 0
-            temp = 0
-            mode = "gpu_error_fallback"
-
-    else:
-        gpu_util = random.randint(10, 95)
-        mem_used = random.randint(1000, 8000)
-        temp = random.randint(40, 85)
-        mode = "simulated"
-
-    # Save to DB
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        INSERT INTO metrics (gpu_util, memory_used, temperature)
-        VALUES (?, ?, ?)
-    """, (gpu_util, mem_used, temp))
-
-    conn.commit()
-    conn.close()
+    gpu_hourly_cost = GPU_PRICING.get(GPU_TYPE, 1.0)
 
     return {
+        "timestamp": int(time.time()),
+        "gpu_type": GPU_TYPE,
         "gpu_utilization": gpu_util,
-        "memory_used": mem_used,
-        "temperature": temp,
-        "mode": mode
+        "memory_used": memory_used,
+        "temperature": temperature,
+        "gpu_hourly_cost": gpu_hourly_cost
     }
 
 
@@ -114,37 +79,22 @@ def metrics():
 # -----------------------------
 @app.get("/history")
 def history():
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
 
-    cursor.execute("""
-        SELECT gpu_util, memory_used, temperature, timestamp
-        FROM metrics
-        ORDER BY id DESC
-        LIMIT 20
-    """)
-
-    rows = cursor.fetchall()
-    conn.close()
-
-    return {
-        "data": [
-            {
-                "gpu_util": r[0],
-                "memory_used": r[1],
-                "temperature": r[2],
-                "timestamp": r[3]
-            }
-            for r in rows
-        ]
-    }
+    return [
+        {
+            "gpu_utilization": random.randint(10, 95),
+            "time": int(time.time()) - (30 - i) * 5
+        }
+        for i in range(30)
+    ]
 
 
 # -----------------------------
-# INSIGHTS (INTELLIGENCE LAYER)
+# INSIGHTS / ALERT ENGINE
 # -----------------------------
 @app.get("/insights")
 def insights():
+
     gpu_util = random.randint(5, 95)
 
     alerts = []
@@ -152,10 +102,10 @@ def insights():
 
     if gpu_util < 20:
         alerts.append("⚠ GPU severely underutilized")
-        recommendation = "Consider stopping idle jobs or batching workloads"
+        recommendation = "Stop idle workloads or batch jobs"
 
     elif gpu_util < 50:
-        alerts.append("⚠ Moderate underutilization detected")
+        alerts.append("⚠ Moderate GPU underutilization")
         recommendation = "Improve scheduling efficiency"
 
     else:
