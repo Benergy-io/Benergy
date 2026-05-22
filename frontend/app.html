@@ -346,31 +346,31 @@ async function loadHistory() {
 }
 
 async function loadInsights() {
-
     try {
-
         const r = await fetch(CONFIG.BASE_URL + "/insights");
-
         const d = await r.json();
+
+        const alertsHTML = d.alerts.map(a =>
+            `<div class="insight">${a}</div>`
+        ).join("");
 
         document.getElementById("insightsBox").innerHTML = `
             <div class="insight">
-                ✔ Status: ${d.status || "OK"}
+                ✔ Status: ${d.status}
             </div>
 
             <div class="insight">
-                💡 Recommendation:
-                ${d.recommendation || "Optimize GPU scheduling"}
+                📊 GPU Utilization: ${d.gpu_utilization}%
             </div>
 
+            ${alertsHTML}
+
             <div class="insight">
-                ⚠ Alert:
-                ${d.alert || "None"}
+                💡 ${d.recommendation}
             </div>
         `;
 
     } catch (e) {
-
         document.getElementById("insightsBox").innerHTML =
             "<div class='insight'>No insights available</div>";
     }

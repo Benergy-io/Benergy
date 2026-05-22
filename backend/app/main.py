@@ -145,44 +145,26 @@ def history():
 # -----------------------------
 @app.get("/insights")
 def insights():
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
+    gpu_util = random.randint(5, 95)
 
-    cursor.execute("""
-        SELECT gpu_util
-        FROM metrics
-        ORDER BY id DESC
-        LIMIT 20
-    """)
+    alerts = []
+    recommendation = "System operating normally"
 
-    rows = cursor.fetchall()
-    conn.close()
+    if gpu_util < 20:
+        alerts.append("⚠ GPU severely underutilized")
+        recommendation = "Consider stopping idle jobs or batching workloads"
 
-    if not rows:
-        return {"message": "No data yet"}
+    elif gpu_util < 50:
+        alerts.append("⚠ Moderate underutilization detected")
+        recommendation = "Improve scheduling efficiency"
 
-    values = [r[0] for r in rows]
-    avg = sum(values) / len(values)
-
-    waste = 100 - avg
-
-    gpu_cost_per_hour = 3
-    waste_cost = (waste / 100) * gpu_cost_per_hour
-
-    if avg < 30:
-        status = "CRITICAL underutilization"
-        recommendation = "Shutdown idle GPU or consolidate workloads"
-    elif avg < 60:
-        status = "Moderate utilization"
-        recommendation = "Optimize workload distribution"
     else:
-        status = "Healthy utilization"
-        recommendation = "No action needed"
+        alerts.append("🟢 GPU usage healthy")
+        recommendation = "No optimization needed"
 
     return {
-        "average_gpu_utilization": round(avg, 2),
-        "waste_estimate_percent": round(waste, 2),
-        "estimated_waste_cost_per_hour_usd": round(waste_cost, 2),
-        "status": status,
+        "status": "OK" if gpu_util > 30 else "WARNING",
+        "gpu_utilization": gpu_util,
+        "alerts": alerts,
         "recommendation": recommendation
     }
