@@ -306,6 +306,18 @@ def create_checkout(user_id: str, plan: str):
     return {"url": session.url}
 
 # -----------------------------
+# STRIPE SUCCESS / CANCEL PAGES
+# -----------------------------
+
+@app.get("/success")
+def success():
+    return {"message": "Payment successful 🎉"}
+
+@app.get("/cancel")
+def cancel():
+    return {"message": "Payment cancelled"}
+
+# -----------------------------
 # SECURE STRIPE WEBHOOK
 # -----------------------------
 @app.post("/stripe-webhook")
