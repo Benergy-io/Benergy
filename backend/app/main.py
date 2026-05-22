@@ -1,3 +1,4 @@
+print("🔥 WEBHOOK FILE ACTIVE")
 from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
