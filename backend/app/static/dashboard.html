@@ -312,16 +312,47 @@
         <!-- HEADER -->
         <header>
             <div class="logo">
-                <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                    <ellipse cx="50" cy="35" rx="20" ry="25" fill="#1a1a1a" stroke="#FFD700" stroke-width="2"/>
-                    <circle cx="40" cy="28" r="6" fill="#FFD700"/>
-                    <circle cx="40" cy="28" r="3" fill="#1a1a1a"/>
-                    <circle cx="60" cy="28" r="6" fill="#FFD700"/>
-                    <circle cx="60" cy="28" r="3" fill="#1a1a1a"/>
-                    <rect x="35" y="58" width="30" height="30" rx="3" fill="#2a2a2a" stroke="#FFD700" stroke-width="1.5"/>
-                    <rect x="20" y="65" width="12" height="18" rx="3" fill="#1a1a1a" stroke="#FFD700" stroke-width="1"/>
-                    <rect x="68" y="65" width="12" height="18" rx="3" fill="#1a1a1a" stroke="#FFD700" stroke-width="1"/>
-                    <rect x="45" y="50" width="10" height="8" fill="#1a1a1a"/>
+                <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style="width: 35px; height: 35px;">
+                    <!-- Dark navy background circle -->
+                    <circle cx="50" cy="50" r="48" fill="#0a1628"/>
+                    
+                    <!-- Head (yellow) -->
+                    <ellipse cx="50" cy="35" rx="18" ry="22" fill="#FFD700"/>
+                    
+                    <!-- Left Eye (large yellow with glow) -->
+                    <circle cx="40" cy="28" r="7" fill="#FFD700"/>
+                    <circle cx="40" cy="28" r="4" fill="#1a1a1a"/>
+                    <circle cx="40" cy="28" r="2" fill="#ffffff" opacity="0.8"/>
+                    
+                    <!-- Right Eye (large yellow with glow) -->
+                    <circle cx="60" cy="28" r="7" fill="#FFD700"/>
+                    <circle cx="60" cy="28" r="4" fill="#1a1a1a"/>
+                    <circle cx="60" cy="28" r="2" fill="#ffffff" opacity="0.8"/>
+                    
+                    <!-- Nose (yellow triangle) -->
+                    <polygon points="50,40 46,45 54,45" fill="#FFD700"/>
+                    
+                    <!-- Mouth (smile) -->
+                    <path d="M 45 48 Q 50 51 55 48" stroke="#FFD700" stroke-width="2" fill="none" stroke-linecap="round"/>
+                    
+                    <!-- Body (yellow) -->
+                    <rect x="38" y="56" width="24" height="26" rx="3" fill="#FFD700"/>
+                    
+                    <!-- Left Arm (yellow with round hand) -->
+                    <rect x="25" y="62" width="10" height="16" rx="5" fill="#FFD700"/>
+                    <circle cx="30" cy="80" r="5" fill="#FFD700"/>
+                    
+                    <!-- Right Arm (yellow with round hand) -->
+                    <rect x="65" y="62" width="10" height="16" rx="5" fill="#FFD700"/>
+                    <circle cx="70" cy="80" r="5" fill="#FFD700"/>
+                    
+                    <!-- Left Antenna -->
+                    <line x1="42" y1="15" x2="38" y2="8" stroke="#FFD700" stroke-width="2" stroke-linecap="round"/>
+                    <circle cx="38" cy="6" r="2" fill="#FFD700"/>
+                    
+                    <!-- Right Antenna -->
+                    <line x1="58" y1="15" x2="62" y2="8" stroke="#FFD700" stroke-width="2" stroke-linecap="round"/>
+                    <circle cx="62" cy="6" r="2" fill="#FFD700"/>
                 </svg>
                 Benergy Dashboard
             </div>
