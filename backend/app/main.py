@@ -427,25 +427,73 @@ def get_dashboard():
             <title>Benergy Dashboard</title>
             <style>
                 body { 
-                    background: #0a1628; 
+                    background: linear-gradient(135deg, #0a1628 0%, #0f1f2e 100%);
                     color: #fff; 
-                    font-family: sans-serif; 
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
                     display: flex; 
                     justify-content: center; 
                     align-items: center; 
                     height: 100vh; 
                     margin: 0; 
                 }
-                .container { text-align: center; }
-                h1 { color: #00d9ff; }
-                a { color: #00d9ff; text-decoration: none; }
+                .container { 
+                    text-align: center;
+                    padding: 40px;
+                }
+                .logo { margin-bottom: 30px; }
+                h1 { 
+                    color: #00d9ff;
+                    margin-bottom: 20px;
+                    font-size: 32px;
+                }
+                .spinner {
+                    display: inline-block;
+                    width: 30px;
+                    height: 30px;
+                    border: 3px solid rgba(0, 217, 255, 0.2);
+                    border-top-color: #00d9ff;
+                    border-radius: 50%;
+                    animation: spin 1s linear infinite;
+                    margin-bottom: 20px;
+                }
+                @keyframes spin { to { transform: rotate(360deg); } }
+                p { color: #a0aec0; margin: 15px 0; }
+                a { color: #00d9ff; text-decoration: none; font-weight: 600; }
+                a:hover { text-decoration: underline; }
             </style>
         </head>
         <body>
             <div class="container">
-                <h1>👽 Benergy Dashboard</h1>
-                <p>Loading dashboard...</p>
-                <p><a href="https://benergy-ten.vercel.app">← Back to Home</a></p>
+                <div class="logo">
+                    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style="width: 60px; height: 60px;">
+                        <circle cx="50" cy="50" r="48" fill="#0a1628"/>
+                        <ellipse cx="50" cy="35" rx="18" ry="22" fill="#FFD700"/>
+                        <circle cx="40" cy="28" r="7" fill="#FFD700"/>
+                        <circle cx="40" cy="28" r="4" fill="#1a1a1a"/>
+                        <circle cx="40" cy="28" r="2" fill="#ffffff" opacity="0.8"/>
+                        <circle cx="60" cy="28" r="7" fill="#FFD700"/>
+                        <circle cx="60" cy="28" r="4" fill="#1a1a1a"/>
+                        <circle cx="60" cy="28" r="2" fill="#ffffff" opacity="0.8"/>
+                        <polygon points="50,40 46,45 54,45" fill="#FFD700"/>
+                        <path d="M 45 48 Q 50 51 55 48" stroke="#FFD700" stroke-width="2" fill="none" stroke-linecap="round"/>
+                        <rect x="38" y="56" width="24" height="26" rx="3" fill="#FFD700"/>
+                        <rect x="25" y="62" width="10" height="16" rx="5" fill="#FFD700"/>
+                        <circle cx="30" cy="80" r="5" fill="#FFD700"/>
+                        <rect x="65" y="62" width="10" height="16" rx="5" fill="#FFD700"/>
+                        <circle cx="70" cy="80" r="5" fill="#FFD700"/>
+                        <line x1="42" y1="15" x2="38" y2="8" stroke="#FFD700" stroke-width="2" stroke-linecap="round"/>
+                        <circle cx="38" cy="6" r="2" fill="#FFD700"/>
+                        <line x1="58" y1="15" x2="62" y2="8" stroke="#FFD700" stroke-width="2" stroke-linecap="round"/>
+                        <circle cx="62" cy="6" r="2" fill="#FFD700"/>
+                    </svg>
+                </div>
+                <h1>Benergy Dashboard</h1>
+                <div class="spinner"></div>
+                <p><strong>Loading dashboard...</strong></p>
+                <p style="font-size: 13px; color: #708090;">Dashboard files deploying. Please refresh in 30 seconds.</p>
+                <p style="margin-top: 40px;">
+                    <a href="https://benergy-ten.vercel.app">← Back to Home</a>
+                </p>
             </div>
         </body>
         </html>
