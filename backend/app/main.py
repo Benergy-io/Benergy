@@ -95,8 +95,6 @@ def init_db():
     CREATE TABLE IF NOT EXISTS subscriptions (
         user_id TEXT PRIMARY KEY,
         plan TEXT,
-        stripe_customer_id TEXT,
-        stripe_subscription_id TEXT,
         updated_at INTEGER
     )
     """)
@@ -133,7 +131,7 @@ def create_user(email="user@example.com"):
         )
 
         c.execute(
-            "INSERT INTO subscriptions VALUES (?, 'free', NULL, NULL, ?)",
+            "INSERT INTO subscriptions VALUES (?, 'free', ?)",
             (user_id, int(time.time()))
         )
 
@@ -185,9 +183,9 @@ def update_subscription(user_id: str, plan: str, stripe_subscription_id: str = N
     try:
         c.execute("""
         UPDATE subscriptions
-        SET plan = ?, stripe_subscription_id = ?, updated_at = ?
+        SET plan = ?, updated_at = ?
         WHERE user_id = ?
-        """, (plan, stripe_subscription_id, int(time.time()), user_id))
+        """, (plan, int(time.time()), user_id))
 
         conn.commit()
         print(f"✅ Subscription updated: {user_id} -> {plan}")
