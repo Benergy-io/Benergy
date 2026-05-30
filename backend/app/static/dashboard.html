@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Benergy Dashboard - GPU Monitoring</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #00d9ff;
+            --dark: #0a1628;
+            --surface: #0f1f2e;
+            --surface-light: #1a2a3a;
+            --text: #ffffff;
+            --text-muted: #a0aec0;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, var(--dark) 0%, var(--surface) 100%);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* HEADER */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+            padding: 20px;
+            background: rgba(15, 31, 46, 0.6);
+            border: 1px solid rgba(0, 217, 255, 0.15);
+            border-radius: 12px;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo svg {
+            width: 30px;
+            height: 30px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: var(--dark);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 30px rgba(0, 217, 255, 0.5);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--primary);
+            border: 1px solid var(--primary);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(0, 217, 255, 0.1);
+        }
+
+        /* STATS GRID */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: rgba(15, 31, 46, 0.8);
+            border: 1px solid rgba(0, 217, 255, 0.15);
+            border-radius: 12px;
+            padding: 24px;
+            transition: all 0.3s;
+        }
+
+        .stat-card:hover {
+            border-color: var(--primary);
+            background: rgba(0, 217, 255, 0.05);
+            transform: translateY(-4px);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 12px;
+        }
+
+        .stat-unit {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .stat-bar {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 12px;
+        }
+
+        .stat-bar-fill {
+            height: 100%;
+            background: var(--primary);
+            border-radius: 3px;
+            transition: width 0.3s;
+        }
+
+        /* MAIN GRID */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        @media (max-width: 1024px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* CARDS */
+        .card {
+            background: rgba(15, 31, 46, 0.8);
+            border: 1px solid rgba(0, 217, 255, 0.15);
+            border-radius: 12px;
+            padding: 24px;
+        }
+
+        .card h2 {
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: var(--primary);
+        }
+
+        /* CHART */
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-bottom: 24px;
+        }
+
+        /* RECOMMENDATIONS */
+        .recommendations-list {
+            list-style: none;
+        }
+
+        .recommendation-item {
+            padding: 16px;
+            background: rgba(0, 217, 255, 0.05);
+            border-left: 3px solid var(--primary);
+            border-radius: 6px;
+            margin-bottom: 12px;
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .recommendation-item.warning {
+            border-left-color: var(--warning);
+            background: rgba(245, 158, 11, 0.05);
+        }
+
+        .recommendation-item.success {
+            border-left-color: var(--success);
+            background: rgba(16, 185, 129, 0.05);
+        }
+
+        /* ALERTS */
+        .alerts-list {
+            list-style: none;
+        }
+
+        .alert-item {
+            padding: 12px;
+            background: rgba(239, 68, 68, 0.1);
+            border-left: 3px solid var(--danger);
+            border-radius: 6px;
+            margin-bottom: 8px;
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .alert-item.info {
+            background: rgba(0, 217, 255, 0.1);
+            border-left-color: var(--primary);
+        }
+
+        .alert-item.warning {
+            background: rgba(245, 158, 11, 0.1);
+            border-left-color: var(--warning);
+        }
+
+        /* GPU LIST */
+        .gpu-list {
+            list-style: none;
+        }
+
+        .gpu-item {
+            padding: 16px;
+            background: rgba(0, 217, 255, 0.05);
+            border: 1px solid rgba(0, 217, 255, 0.15);
+            border-radius: 8px;
+            margin-bottom: 12px;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .gpu-item-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .gpu-item-value {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        /* LOADING */
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 300px;
+            font-size: 18px;
+            color: var(--text-muted);
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(0, 217, 255, 0.2);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* FOOTER */
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: var(--text-muted);
+            font-size: 12px;
+            border-top: 1px solid rgba(0, 217, 255, 0.1);
+            margin-top: 40px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- HEADER -->
+        <header>
+            <div class="logo">
+                <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                    <ellipse cx="50" cy="35" rx="20" ry="25" fill="#1a1a1a" stroke="#FFD700" stroke-width="2"/>
+                    <circle cx="40" cy="28" r="6" fill="#FFD700"/>
+                    <circle cx="40" cy="28" r="3" fill="#1a1a1a"/>
+                    <circle cx="60" cy="28" r="6" fill="#FFD700"/>
+                    <circle cx="60" cy="28" r="3" fill="#1a1a1a"/>
+                    <rect x="35" y="58" width="30" height="30" rx="3" fill="#2a2a2a" stroke="#FFD700" stroke-width="1.5"/>
+                    <rect x="20" y="65" width="12" height="18" rx="3" fill="#1a1a1a" stroke="#FFD700" stroke-width="1"/>
+                    <rect x="68" y="65" width="12" height="18" rx="3" fill="#1a1a1a" stroke="#FFD700" stroke-width="1"/>
+                    <rect x="45" y="50" width="10" height="8" fill="#1a1a1a"/>
+                </svg>
+                Benergy Dashboard
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-secondary" onclick="refreshData()">🔄 Refresh</button>
+                <button class="btn btn-primary" onclick="goHome()">← Back Home</button>
+            </div>
+        </header>
+
+        <!-- STATS GRID -->
+        <div class="stats-grid" id="statsGrid">
+            <div class="loading">
+                <div class="spinner"></div>
+                Loading GPU data...
+            </div>
+        </div>
+
+        <!-- MAIN GRID -->
+        <div class="main-grid">
+            <!-- LEFT: CHARTS & METRICS -->
+            <div>
+                <!-- UTILIZATION CHART -->
+                <div class="card">
+                    <h2>GPU Utilization Over Time</h2>
+                    <div class="chart-container">
+                        <canvas id="utilizationChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- MEMORY USAGE -->
+                <div class="card">
+                    <h2>Memory Usage</h2>
+                    <div class="chart-container">
+                        <canvas id="memoryChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- GPU LIST -->
+                <div class="card">
+                    <h2>GPU Breakdown</h2>
+                    <ul class="gpu-list" id="gpuList">
+                        <li class="loading"><div class="spinner"></div>Loading...</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- RIGHT: ALERTS & RECOMMENDATIONS -->
+            <div>
+                <!-- ALERTS -->
+                <div class="card">
+                    <h2>⚠️ Alerts</h2>
+                    <ul class="alerts-list" id="alertsList">
+                        <li class="loading"><div class="spinner"></div>Loading...</li>
+                    </ul>
+                </div>
+
+                <!-- RECOMMENDATIONS -->
+                <div class="card" style="margin-top: 20px;">
+                    <h2>💡 Recommendations</h2>
+                    <ul class="recommendations-list" id="recommendationsList">
+                        <li class="loading"><div class="spinner"></div>Loading...</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer>
+        <p>Benergy © 2026 | GPU Observability for AI Teams</p>
+        <p id="lastUpdate">Last updated: --:--</p>
+    </footer>
+
+    <script>
+        const API_BASE = "https://benergy.onrender.com";
+        let utilizationChart = null;
+        let memoryChart = null;
+
+        // Load data on page load
+        window.addEventListener('load', () => {
+            loadDashboard();
+            // Auto-refresh every 30 seconds
+            setInterval(loadDashboard, 30000);
+        });
+
+        async function loadDashboard() {
+            try {
+                console.log("📊 Loading dashboard data...");
+                const response = await fetch(`${API_BASE}/dashboard?hours=24`);
+                const data = await response.json();
+                
+                console.log("✅ Data loaded:", data);
+                
+                renderStats(data);
+                renderAlerts();
+                renderGPUs(data.gpu_metrics);
+                renderRecommendations(data.recommendations);
+                renderCharts(data.gpu_metrics);
+                
+                document.getElementById('lastUpdate').textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
+            } catch (error) {
+                console.error("❌ Error loading dashboard:", error);
+                document.getElementById('statsGrid').innerHTML = `
+                    <div style="grid-column: 1/-1; padding: 40px; text-align: center; color: var(--danger);">
+                        ⚠️ Error loading dashboard data<br/>
+                        <small>${error.message}</small>
+                    </div>
+                `;
+            }
+        }
+
+        function renderStats(data) {
+            const html = `
+                <div class="stat-card">
+                    <div class="stat-label">Total GPUs</div>
+                    <div class="stat-value">${data.total_gpus}</div>
+                    <div class="stat-unit">Active Units</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-label">Avg Utilization</div>
+                    <div class="stat-value">${data.avg_utilization}%</div>
+                    <div class="stat-bar">
+                        <div class="stat-bar-fill" style="width: ${data.avg_utilization}%"></div>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-label">Idle Time</div>
+                    <div class="stat-value">${data.idle_percentage}%</div>
+                    <div class="stat-unit">Potential Savings</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-label">Peak Utilization</div>
+                    <div class="stat-value">${data.peak_utilization}%</div>
+                    <div class="stat-unit">Max Load</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-label">Memory Usage</div>
+                    <div class="stat-value">${(data.memory_usage / 1024).toFixed(1)}</div>
+                    <div class="stat-unit">GB Average</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-label">Monthly Waste Cost</div>
+                    <div class="stat-value">$${data.estimated_monthly_cost.toFixed(0)}</div>
+                    <div class="stat-unit">Estimated Idle Cost</div>
+                </div>
+            `;
+            document.getElementById('statsGrid').innerHTML = html;
+        }
+
+        function renderRecommendations(recommendations) {
+            const html = recommendations.map(rec => {
+                let className = 'recommendation-item';
+                if (rec.includes('⚠️')) className += ' warning';
+                if (rec.includes('✓')) className += ' success';
+                return `<li class="${className}">${rec}</li>`;
+            }).join('');
+            document.getElementById('recommendationsList').innerHTML = html || '<li class="recommendation-item">No recommendations at this time.</li>';
+        }
+
+        async function renderAlerts() {
+            try {
+                const response = await fetch(`${API_BASE}/alerts`);
+                const data = await response.json();
+                
+                if (data.alerts.length === 0) {
+                    document.getElementById('alertsList').innerHTML = '<li class="alert-item info">✅ No active alerts</li>';
+                    return;
+                }
+                
+                const html = data.alerts.map(alert => {
+                    let className = 'alert-item';
+                    if (alert.severity === 'warning') className += ' warning';
+                    if (alert.severity === 'info') className += ' info';
+                    
+                    let message = `${alert.type}`;
+                    if (alert.gpu_id !== undefined) message += ` (GPU ${alert.gpu_id})`;
+                    if (alert.value) message += `: ${alert.value.toFixed(1)}°C`;
+                    
+                    return `<li class="${className}">${message}</li>`;
+                }).join('');
+                
+                document.getElementById('alertsList').innerHTML = html;
+            } catch (error) {
+                console.error("Error loading alerts:", error);
+            }
+        }
+
+        function renderGPUs(metrics) {
+            if (!metrics || metrics.length === 0) {
+                document.getElementById('gpuList').innerHTML = '<li class="alert-item info">No GPU metrics available yet</li>';
+                return;
+            }
+
+            const gpuMap = {};
+            metrics.forEach(m => {
+                if (!gpuMap[m.gpu_id]) {
+                    gpuMap[m.gpu_id] = [];
+                }
+                gpuMap[m.gpu_id].push(m);
+            });
+
+            const html = Object.entries(gpuMap).map(([gpuId, gpuMetrics]) => {
+                const latest = gpuMetrics[gpuMetrics.length - 1];
+                return `
+                    <li class="gpu-item">
+                        <div>
+                            <div class="gpu-item-label">GPU ${gpuId}</div>
+                            <div class="gpu-item-value">${latest.utilization.toFixed(1)}%</div>
+                        </div>
+                        <div>
+                            <div class="gpu-item-label">Memory</div>
+                            <div class="gpu-item-value">${(latest.memory_used / 1024).toFixed(1)}GB</div>
+                        </div>
+                        <div>
+                            <div class="gpu-item-label">Temp</div>
+                            <div class="gpu-item-value">${latest.temperature.toFixed(0)}°C</div>
+                        </div>
+                    </li>
+                `;
+            }).join('');
+
+            document.getElementById('gpuList').innerHTML = html;
+        }
+
+        function renderCharts(metrics) {
+            if (!metrics || metrics.length === 0) return;
+
+            // Group metrics by GPU
+            const gpuData = {};
+            metrics.forEach(m => {
+                if (!gpuData[m.gpu_id]) gpuData[m.gpu_id] = [];
+                gpuData[m.gpu_id].push(m);
+            });
+
+            // Utilization chart
+            const utilizationCtx = document.getElementById('utilizationChart').getContext('2d');
+            const utilizationDatasets = Object.entries(gpuData).map(([gpuId, data], idx) => {
+                const colors = ['#00d9ff', '#ff6b6b', '#4ecdc4', '#45b7d1'];
+                return {
+                    label: `GPU ${gpuId}`,
+                    data: data.map(m => m.utilization),
+                    borderColor: colors[idx % colors.length],
+                    backgroundColor: colors[idx % colors.length] + '20',
+                    tension: 0.4,
+                    fill: true
+                };
+            });
+
+            if (utilizationChart) utilizationChart.destroy();
+            utilizationChart = new Chart(utilizationCtx, {
+                type: 'line',
+                data: {
+                    labels: metrics.slice(-20).map((_, i) => `${i}m ago`),
+                    datasets: utilizationDatasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#a0aec0' } } },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: { color: '#a0aec0' },
+                            grid: { color: 'rgba(0,217,255,0.1)' }
+                        },
+                        x: { ticks: { color: '#a0aec0' }, grid: { color: 'rgba(0,217,255,0.1)' } }
+                    }
+                }
+            });
+
+            // Memory chart
+            const memoryCtx = document.getElementById('memoryChart').getContext('2d');
+            const memoryDatasets = Object.entries(gpuData).map(([gpuId, data], idx) => {
+                const colors = ['#00d9ff', '#ff6b6b', '#4ecdc4', '#45b7d1'];
+                return {
+                    label: `GPU ${gpuId}`,
+                    data: data.map(m => (m.memory_used / 1024).toFixed(1)),
+                    borderColor: colors[idx % colors.length],
+                    backgroundColor: colors[idx % colors.length] + '20',
+                    tension: 0.4,
+                    fill: true
+                };
+            });
+
+            if (memoryChart) memoryChart.destroy();
+            memoryChart = new Chart(memoryCtx, {
+                type: 'line',
+                data: {
+                    labels: metrics.slice(-20).map((_, i) => `${i}m ago`),
+                    datasets: memoryDatasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#a0aec0' } } },
+                    scales: {
+                        y: {
+                            ticks: { color: '#a0aec0' },
+                            grid: { color: 'rgba(0,217,255,0.1)' }
+                        },
+                        x: { ticks: { color: '#a0aec0' }, grid: { color: 'rgba(0,217,255,0.1)' } }
+                    }
+                }
+            });
+        }
+
+        function refreshData() {
+            console.log("🔄 Manually refreshing...");
+            loadDashboard();
+        }
+
+        function goHome() {
+            window.location.href = "https://benergy-ten.vercel.app";
+        }
+    </script>
+</body>
+</html>
