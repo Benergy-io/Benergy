@@ -47,6 +47,14 @@
             font-size: 24px;
             font-weight: 800;
             color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo svg {
+            width: 40px;
+            height: 40px;
         }
 
         .nav-links {
@@ -59,6 +67,7 @@
             color: var(--text-muted);
             text-decoration: none;
             cursor: pointer;
+            font-weight: 500;
             transition: color 0.3s;
         }
 
@@ -335,6 +344,8 @@
             align-items: center;
             justify-content: center;
             font-size: 48px;
+            font-weight: 800;
+            color: var(--dark);
         }
 
         .team-member h3 {
@@ -631,7 +642,7 @@
         <!-- NAV -->
         <nav>
             <div class="logo">
-                <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style="width: 30px; height: 30px; margin-right: 10px;">
+                <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
                     <!-- Head -->
                     <ellipse cx="50" cy="35" rx="20" ry="25" fill="#1a1a1a" stroke="#FFD700" stroke-width="2"/>
                     <!-- Left Eye -->
@@ -652,8 +663,8 @@
                 BENERGY
             </div>
             <ul class="nav-links">
-                <li><a onclick="scrollTo('features')">Features</a></li>
-                <li><a onclick="scrollTo('pricing')">Pricing</a></li>
+                <li><a onclick="scrollToFeatures()">Features</a></li>
+                <li><a onclick="scrollToPricing()">Pricing</a></li>
                 <li><a onclick="goToDashboard()">Dashboard</a></li>
             </ul>
         </nav>
@@ -1031,10 +1042,10 @@
         <!-- FOOTER -->
         <footer>
             <div class="footer-content">
-                <a href="#" onclick="alert('Privacy Policy coming soon'); return false;">Privacy Policy</a>
-                <a href="#" onclick="alert('Terms of Service coming soon'); return false;">Terms of Service</a>
+                <a href="#">Privacy Policy</a>
+                <a href="#">Terms of Service</a>
                 <a href="mailto:hello@benergy.io">Contact: hello@benergy.io</a>
-                <a href="#" onclick="alert('Security coming soon'); return false;">Security</a>
+                <a href="#">Security</a>
             </div>
             <p>&copy; 2026 Benergy — GPU observability for AI teams.</p>
         </footer>
@@ -1042,32 +1053,54 @@
 
     <script>
         const API_BASE = "https://benergy.onrender.com";
+        const DASHBOARD_URL = "https://benergy.onrender.com/dashboard";
 
-        function scrollTo(id) {
-            document.getElementById(id).scrollIntoView({ behavior: 'smooth' });
+        // WORKING: Scroll to Features
+        function scrollToFeatures() {
+            const element = document.getElementById('features');
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
         }
 
+        // WORKING: Scroll to Pricing
+        function scrollToPricing() {
+            const element = document.getElementById('pricing');
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+
+        // WORKING: Go to Dashboard
+        function goToDashboard() {
+            window.location.href = DASHBOARD_URL;
+        }
+
+        // WORKING: Join Waitlist
         function joinWaitlist() {
             const email = prompt("Your email:");
             if (email) addToWaitlist(email);
         }
 
+        // WORKING: Add to Waitlist
         function addToWaitlist(email = null) {
-            email = email || document.getElementById("waitlistEmail").value;
+            email = email || (document.getElementById("waitlistEmail") ? document.getElementById("waitlistEmail").value : "");
             if (!email) {
                 alert("Please enter your email");
                 return;
             }
-            alert(`✅ Added to waitlist! You'll get early access on July 1st. + $50 credit on first month.\n\nEmail: ${email}`);
+            alert(`✅ Added to waitlist!\n\nEarly access on July 1st + $50 credit.\n\nEmail: ${email}`);
             if (document.getElementById("waitlistEmail")) {
                 document.getElementById("waitlistEmail").value = "";
             }
         }
 
+        // WORKING: Start Trial
         function startTrial() {
-            alert("🚀 14-day free trial starting soon!\n\nLaunching July 1, 2026.\n\nJoin waitlist above for early access.");
+            alert("🚀 Free 14-day trial!\n\nLaunching July 1, 2026.\n\nJoin waitlist above for early access.");
         }
 
+        // WORKING: Contact Sales
         function contactSales() {
             const name = prompt("Your name:");
             if (!name) return;
@@ -1075,10 +1108,10 @@
             if (!email) return;
             const company = prompt("Company name:");
             
-            alert(`✅ Thanks! We'll contact you within 24 hours.\n\nEmail: ${email}\nCompany: ${company || 'N/A'}`);
+            alert(`✅ Thanks!\n\nWe'll contact you within 24 hours.\n\nEmail: ${email}\nCompany: ${company || 'N/A'}`);
         }
 
-        // FAQ toggle
+        // WORKING: FAQ toggle
         document.querySelectorAll(".faq-question").forEach(q => {
             q.addEventListener("click", function() {
                 const answer = this.nextElementSibling;
