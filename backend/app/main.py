@@ -1,53 +1,214 @@
-print("🔥 BENERGY API v5.1 - FULLY OPERATIONAL")
-from fastapi import FastAPI, Header, HTTPException, Request
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse
-
-import time
-import subprocess
 import os
-import sqlite3
 import uuid
 import stripe
+import smtplib
+import random
+from datetime import datetime, timedelta
+from typing import List
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
-app = FastAPI(title="Benergy API", version="5.1")
+from fastapi import FastAPI, Depends, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import RedirectResponse, FileResponse
+from sqlalchemy import create_engine, Column, Integer, Float, String, DateTime
+from sqlalchemy.orm import declarative_base, sessionmaker, Session
+from pydantic import BaseModel
 
-# -----------------------------
-# ENVIRONMENT VARIABLES (SECURE)
-# -----------------------------
+print("🔥 BENERGY v2.0 - PRODUCTION BACKEND")
+
+# ================= CONFIG =================
+
+DATABASE_URL = "sqlite:///./benergy.db"
+SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key")
+
+# STRIPE CONFIG
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
 STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
+STRIPE_SUCCESS_URL = os.getenv("STRIPE_SUCCESS_URL", "https://benergy-io.github.io/")
+STRIPE_CANCEL_URL = os.getenv("STRIPE_CANCEL_URL", "https://benergy-io.github.io/")
 
-STRIPE_SUCCESS_URL = os.getenv("STRIPE_SUCCESS_URL", "https://benergy-io.github.io/Benergy/")
-STRIPE_CANCEL_URL = os.getenv("STRIPE_CANCEL_URL", "https://benergy-io.github.io/Benergy/")
-
-# ✅ UPDATED: "solo" and "team" to match landing page
 STRIPE_PLANS = {
-    "solo": {
-        "price_id": os.getenv("STRIPE_PRO_PRICE_ID", "price_1234567890")
-    },
-    "team": {
-        "price_id": os.getenv("STRIPE_TEAM_PRICE_ID", "price_0987654321")
-    },
-    "pro": {
-        "price_id": os.getenv("STRIPE_PRO_PRICE_ID", "price_1234567890")
-    }
+    "solo": {"price_id": os.getenv("STRIPE_PRO_PRICE_ID")},
+    "team": {"price_id": os.getenv("STRIPE_TEAM_PRICE_ID")},
+    "pro": {"price_id": os.getenv("STRIPE_PRO_PRICE_ID")},
 }
 
-# GPU PRICING
-GPU_PRICING = {
-    "T4": 0.35,
-    "V100": 2.50,
-    "A100": 4.10,
-    "H100": 8.00,
-    "RTX 4090": 0.60
-}
+# EMAIL CONFIG
+SENDER_EMAIL = os.getenv("SENDER_EMAIL", "noreply@benergy.io")
+SENDER_PASSWORD = os.getenv("SENDER_PASSWORD", "")
+CONTACT_EMAIL = os.getenv("CONTACT_EMAIL", "hello@benergy.io")
 
-GPU_TYPE = "A100"
-DB_NAME = "benergy.db"
+print(f"✅ Stripe: {stripe.api_key[:20]}...")
+print(f"✅ Plans: {list(STRIPE_PLANS.keys())}")
 
-# CORS
+# ================= DATABASE =================
+
+engine = create_engine(
+    DATABASE_URL,
+    connect_args={"check_same_thread": False},
+)
+
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+Base = declarative_base()
+
+# ================= DATABASE MODELS =================
+
+class GPUMetric(Base):
+    __tablename__ = "gpu_metrics"
+    id = Column(Integer, primary_key=True, index=True)
+    gpu_id = Column(Integer, index=True)
+    timestamp = Column(DateTime, default=datetime.utcnow)
+    utilization = Column(Float)
+    memory_used = Column(Float)
+    memory_total = Column(Float)
+    temperature = Column(Float)
+    power_draw = Column(Float)
+
+
+class User(Base):
+    __tablename__ = "users"
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String, unique=True, index=True)
+    password_hash = Column(String, nullable=True)
+    api_key = Column(String, unique=True, index=True)
+    tier = Column(String, default="free")
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class Subscription(Base):
+    __tablename__ = "subscriptions"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(String, unique=True, index=True)
+    plan = Column(String, default="free")
+    stripe_customer_id = Column(String, nullable=True)
+    stripe_subscription_id = Column(String, nullable=True)
+    updated_at = Column(DateTime, default=datetime.utcnow)
+
+
+Base.metadata.create_all(bind=engine)
+
+# ================= PYDANTIC MODELS =================
+
+class GPUMetricRead(BaseModel):
+    gpu_id: int
+    timestamp: datetime
+    utilization: float
+    memory_used: float
+    memory_total: float
+    temperature: float
+    power_draw: float
+
+    class Config:
+        from_attributes = True
+
+
+class DashboardData(BaseModel):
+    total_gpus: int
+    avg_utilization: float
+    idle_percentage: float
+    peak_utilization: float
+    memory_usage: float
+    estimated_monthly_cost: float
+    recommendations: List[str]
+    gpu_metrics: List[GPUMetricRead]
+
+
+# ================= DATABASE DEPENDENCY =================
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+# ================= GPU METRICS =================
+
+def get_gpu_metrics():
+    """Generate mock GPU metrics"""
+    metrics = []
+    for gpu_id in range(4):
+        utilization = random.uniform(15, 85)
+        memory_total = 10000
+        memory_used = (utilization / 100) * memory_total
+        temperature = 35 + (utilization / 100) * 35
+        power_draw = 50 + (utilization / 100) * 200
+        
+        metrics.append({
+            "gpu_id": gpu_id,
+            "utilization": utilization,
+            "memory_used": memory_used,
+            "memory_total": memory_total,
+            "temperature": temperature,
+            "power_draw": power_draw,
+        })
+    return metrics
+
+
+def store_gpu_metrics(db: Session):
+    """Store GPU metrics in database"""
+    metrics = get_gpu_metrics()
+    for metric in metrics:
+        db_metric = GPUMetric(
+            gpu_id=metric["gpu_id"],
+            timestamp=datetime.utcnow(),
+            utilization=metric["utilization"],
+            memory_used=metric["memory_used"],
+            memory_total=metric["memory_total"],
+            temperature=metric["temperature"],
+            power_draw=metric["power_draw"],
+        )
+        db.add(db_metric)
+    db.commit()
+
+
+# ================= ANALYSIS =================
+
+def calculate_recommendations(metrics: List[GPUMetricRead], avg_utilization: float):
+    """Generate recommendations"""
+    recommendations = []
+
+    if avg_utilization < 30:
+        recommendations.append("⚠️ GPUs underutilized (<30%). Batch workloads together.")
+    elif avg_utilization > 90:
+        recommendations.append("⚠️ High GPU utilization (>90%). Watch for bottlenecks.")
+
+    recent_metrics = [
+        m for m in metrics
+        if (datetime.utcnow() - m.timestamp).total_seconds() < 3600
+    ]
+
+    if recent_metrics:
+        max_util = max([m.utilization for m in recent_metrics])
+        if max_util < 10:
+            recommendations.append("💤 GPU idle for last hour. Check running jobs.")
+
+    recommendations.append("💡 Shift heavy workloads to off-peak hours to save costs.")
+
+    return recommendations[:3]
+
+
+def estimate_monthly_cost(metrics: List[GPUMetricRead]):
+    """Estimate monthly cost"""
+    if not metrics:
+        return 0.0
+
+    avg_utilization = sum([m.utilization for m in metrics]) / len(metrics)
+    idle_percentage = (100 - avg_utilization) / 100
+    num_gpus = len(set([m.gpu_id for m in metrics]))
+    hours_per_month = 730
+    cost_per_idle_hour = 0.25
+
+    return num_gpus * hours_per_month * idle_percentage * cost_per_idle_hour
+
+
+# ================= FASTAPI APP =================
+
+app = FastAPI(title="Benergy GPU API", version="2.0")
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -62,312 +223,188 @@ if not os.path.exists("static"):
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# =============================
-# DATABASE INIT
-# =============================
-def init_db():
-    conn = sqlite3.connect(DB_NAME)
-    c = conn.cursor()
-
-    c.execute("""
-    CREATE TABLE IF NOT EXISTS users (
-        user_id TEXT PRIMARY KEY,
-        api_key TEXT,
-        email TEXT,
-        created_at INTEGER
-    )
-    """)
-
-    c.execute("""
-    CREATE TABLE IF NOT EXISTS subscriptions (
-        user_id TEXT PRIMARY KEY,
-        plan TEXT,
-        updated_at INTEGER
-    )
-    """)
-
-    c.execute("""
-    CREATE TABLE IF NOT EXISTS usage (
-        user_id TEXT,
-        timestamp INTEGER,
-        gpu_util INTEGER,
-        memory_used INTEGER,
-        temperature INTEGER,
-        cost REAL
-    )
-    """)
-
-    conn.commit()
-    conn.close()
-
-init_db()
-
-# =============================
-# USER SYSTEM
-# =============================
-def create_user(email="user@example.com"):
-    user_id = str(uuid.uuid4())
-    api_key = str(uuid.uuid4())
-
-    conn = sqlite3.connect(DB_NAME)
-    c = conn.cursor()
-
-    c.execute(
-        "INSERT INTO users VALUES (?, ?, ?, ?)",
-        (user_id, api_key, email, int(time.time()))
-    )
-
-    c.execute(
-        "INSERT INTO subscriptions VALUES (?, 'free', ?)",
-        (user_id, int(time.time()))
-    )
-
-    conn.commit()
-    conn.close()
-
-    return {
-        "user_id": user_id,
-        "api_key": api_key,
-        "plan": "free"
-    }
-
-def get_user(api_key: str):
-    conn = sqlite3.connect(DB_NAME)
-    c = conn.cursor()
-
-    c.execute("SELECT user_id FROM users WHERE api_key = ?", (api_key,))
-    row = c.fetchone()
-
-    conn.close()
-    return row[0] if row else None
-
-def get_plan(user_id: str):
-    conn = sqlite3.connect(DB_NAME)
-    c = conn.cursor()
-
-    c.execute("SELECT plan FROM subscriptions WHERE user_id = ?", (user_id,))
-    row = c.fetchone()
-
-    conn.close()
-    return row[0] if row else "free"
-
-# =============================
-# GPU METRICS
-# =============================
-def get_gpu_metrics():
-    try:
-        query = (
-            "nvidia-smi --query-gpu=utilization.gpu,"
-            "memory.used,temperature.gpu --format=csv,noheader,nounits"
-        )
-
-        result = subprocess.check_output(query, shell=True).decode().strip()
-        util, mem, temp = result.split(",")
-
-        return {
-            "gpu_utilization": int(util),
-            "memory_used": int(mem),
-            "temperature": int(temp)
-        }
-
-    except Exception:
-        # Mock GPU metrics for testing
-        return {
-            "gpu_utilization": 15 + (int(time.time()) % 80),
-            "memory_used": 1024 + (int(time.time()) % 10000),
-            "temperature": 55
-        }
-
-# =============================
-# COST ENGINE
-# =============================
-start_time = time.time()
-
-def calculate_cost():
-    hours = (time.time() - start_time) / 3600
-    return round(hours * GPU_PRICING.get(GPU_TYPE, 1.0), 6)
-
-def save_usage(user_id, gpu, cost):
-    conn = sqlite3.connect(DB_NAME)
-    c = conn.cursor()
-
-    c.execute("""
-    INSERT INTO usage VALUES (?, ?, ?, ?, ?, ?)
-    """, (
-        user_id,
-        int(time.time()),
-        gpu["gpu_utilization"],
-        gpu["memory_used"],
-        gpu["temperature"],
-        cost
-    ))
-
-    conn.commit()
-    conn.close()
-
-# =============================
-# ENDPOINTS
-# =============================
+# ================= ROUTES =================
 
 @app.get("/")
 def root():
-    return {"status": "Benergy API Running", "version": "5.1", "stripe": "✅ Active"}
-
-@app.get("/create-user")
-def new_user():
-    return create_user()
-
-# ✅ METRICS ENDPOINT
-@app.get("/metrics")
-def metrics(x_api_key: str = Header(None)):
-
-    user_id = get_user(x_api_key)
-    if not user_id:
-        raise HTTPException(status_code=401, detail="Invalid API Key")
-
-    plan = get_plan(user_id)
-    gpu = get_gpu_metrics()
-    cost = calculate_cost()
-
-    save_usage(user_id, gpu, cost)
-
     return {
-        "user_id": user_id,
-        "plan": plan,
-        "gpu_type": GPU_TYPE,
-        "gpu_utilization": gpu["gpu_utilization"],
-        "memory_used": gpu["memory_used"],
-        "temperature": gpu["temperature"],
-        "total_cost": cost
+        "message": "👽 Benergy GPU Monitoring API v2.0",
+        "status": "✅ RUNNING",
+        "endpoints": {
+            "dashboard": "/dashboard",
+            "metrics": "/metrics/gpu/{id}",
+            "alerts": "/alerts",
+            "health": "/health",
+            "docs": "/docs"
+        }
     }
 
-# ✅ HISTORY ENDPOINT
-@app.get("/history")
-def history(x_api_key: str = Header(None)):
 
-    user_id = get_user(x_api_key)
-    if not user_id:
-        return {"error": "invalid api key"}
+@app.get("/health")
+def health():
+    return {"status": "✅ ok", "service": "benergy-api"}
 
-    conn = sqlite3.connect(DB_NAME)
-    c = conn.cursor()
 
-    c.execute("""
-        SELECT timestamp, gpu_util, cost
-        FROM usage
-        WHERE user_id = ?
-        ORDER BY timestamp ASC
-        LIMIT 200
-    """, (user_id,))
+@app.post("/collect-metrics")
+def collect_metrics(db: Session = Depends(get_db)):
+    """Trigger GPU metric collection"""
+    store_gpu_metrics(db)
+    return {"status": "✅ success", "message": "Metrics collected", "count": 4}
 
-    rows = c.fetchall()
-    conn.close()
 
-    return {
-        "timestamps": [r[0] for r in rows],
-        "gpu_utilization": [r[1] for r in rows],
-        "cost": [r[2] for r in rows]
-    }
+@app.get("/dashboard")
+def get_dashboard(hours: int = 24, db: Session = Depends(get_db)):
+    """Get dashboard data with GPU metrics"""
+    cutoff_time = datetime.utcnow() - timedelta(hours=hours)
 
-# =============================
-# ✅ STRIPE CHECKOUT (FIXED)
-# =============================
+    metrics = db.query(GPUMetric).filter(GPUMetric.timestamp >= cutoff_time).all()
+
+    if not metrics:
+        # Return mock data if no metrics yet
+        return DashboardData(
+            total_gpus=4,
+            avg_utilization=45.2,
+            idle_percentage=54.8,
+            peak_utilization=92.1,
+            memory_usage=4521.5,
+            estimated_monthly_cost=324.50,
+            recommendations=[
+                "⚠️ GPUs underutilized. Batch smaller jobs.",
+                "💡 Schedule heavy training during off-peak.",
+                "💤 GPU idle. Check running jobs."
+            ],
+            gpu_metrics=[],
+        )
+
+    gpu_metrics_read = [GPUMetricRead.model_validate(m) for m in metrics]
+    utilizations = [m.utilization for m in gpu_metrics_read]
+    avg_utilization = sum(utilizations) / len(utilizations)
+    peak_utilization = max(utilizations)
+    idle_percentage = 100 - avg_utilization
+    memory_usage = sum([m.memory_used for m in gpu_metrics_read]) / len(gpu_metrics_read)
+    total_gpus = len(set([m.gpu_id for m in gpu_metrics_read]))
+    estimated_cost = estimate_monthly_cost(gpu_metrics_read)
+    recommendations = calculate_recommendations(gpu_metrics_read, avg_utilization)
+
+    return DashboardData(
+        total_gpus=total_gpus,
+        avg_utilization=round(avg_utilization, 2),
+        idle_percentage=round(idle_percentage, 2),
+        peak_utilization=round(peak_utilization, 2),
+        memory_usage=round(memory_usage, 2),
+        estimated_monthly_cost=round(estimated_cost, 2),
+        recommendations=recommendations,
+        gpu_metrics=gpu_metrics_read[-100:],
+    )
+
+
+@app.get("/metrics/gpu/{gpu_id}")
+def get_single_gpu_metrics(gpu_id: int, hours: int = 24, db: Session = Depends(get_db)):
+    """Get metrics for specific GPU"""
+    cutoff_time = datetime.utcnow() - timedelta(hours=hours)
+    metrics = db.query(GPUMetric).filter(
+        GPUMetric.gpu_id == gpu_id,
+        GPUMetric.timestamp >= cutoff_time,
+    ).all()
+    return [GPUMetricRead.model_validate(m) for m in metrics]
+
+
+@app.get("/alerts")
+def get_alerts(db: Session = Depends(get_db)):
+    """Get active alerts"""
+    cutoff_time = datetime.utcnow() - timedelta(hours=1)
+    metrics = db.query(GPUMetric).filter(GPUMetric.timestamp >= cutoff_time).all()
+
+    alerts = []
+    if not metrics:
+        return {"alerts": []}
+
+    for metric in metrics:
+        if metric.temperature > 80:
+            alerts.append({
+                "type": "high_temperature",
+                "gpu_id": metric.gpu_id,
+                "value": metric.temperature,
+                "severity": "warning",
+            })
+
+    avg_utilization = sum([m.utilization for m in metrics]) / len(metrics)
+    if avg_utilization < 20:
+        alerts.append({
+            "type": "underutilized",
+            "avg_utilization": round(avg_utilization, 2),
+            "severity": "info",
+        })
+
+    return {"alerts": alerts}
+
+
+# ================= STRIPE CHECKOUT =================
+
 @app.post("/create-checkout")
-async def create_checkout(request: dict):
-    """
-    Expected payload from frontend:
-    {
-        "user_id": "user_xxx",
-        "plan": "solo" or "team"
-    }
-    """
-    
-    user_id = request.get("user_id")
-    plan = request.get("plan")
+async def create_checkout(data: dict):
+    """Create Stripe checkout session"""
+    user_id = data.get("user_id", "guest")
+    plan = data.get("plan", "team")
 
-    print(f"🔷 Checkout request: user_id={user_id}, plan={plan}")
+    print(f"\n🔷 CHECKOUT: user_id={user_id}, plan={plan}")
 
-    # Validate plan
     if plan not in STRIPE_PLANS:
-        return {"error": f"Invalid plan: {plan}. Use 'solo' or 'team'"}
+        return {"error": f"❌ Invalid plan: {plan}"}
 
-    # Validate Stripe key
     if not stripe.api_key:
-        return {"error": "Stripe API key not configured"}
+        return {"error": "❌ Stripe not configured"}
 
     try:
-        # Create Stripe session
+        price_id = STRIPE_PLANS[plan]["price_id"]
+        
+        if not price_id:
+            return {"error": f"❌ No price ID for plan: {plan}"}
+
         session = stripe.checkout.Session.create(
             payment_method_types=["card"],
             mode="subscription",
             line_items=[{
-                "price": STRIPE_PLANS[plan]["price_id"],
+                "price": price_id,
                 "quantity": 1
             }],
             success_url=STRIPE_SUCCESS_URL,
             cancel_url=STRIPE_CANCEL_URL,
-            metadata={
-                "user_id": user_id,
-                "plan": plan
-            }
+            metadata={"user_id": user_id, "plan": plan}
         )
 
-        print(f"✅ Stripe session created: {session.url}")
+        print(f"✅ Stripe session created: {session.id}")
+        print(f"🔗 Checkout URL: {session.url}")
 
         return {
+            "status": "✅ success",
             "url": session.url,
             "session_id": session.id,
             "plan": plan
         }
 
-    except stripe.error.CardError as e:
-        return {"error": f"Card error: {e.user_message}"}
-    except stripe.error.RateLimitError as e:
-        return {"error": "Too many requests to Stripe"}
-    except stripe.error.InvalidRequestError as e:
-        return {"error": f"Invalid request: {e.user_message}"}
-    except stripe.error.AuthenticationError as e:
-        return {"error": "Stripe authentication failed"}
-    except stripe.error.APIConnectionError as e:
-        return {"error": "Network error connecting to Stripe"}
     except Exception as e:
         print(f"❌ Stripe error: {str(e)}")
-        return {"error": f"Stripe error: {str(e)}"}
+        return {"error": f"❌ Stripe error: {str(e)}"}
 
-# =============================
-# ✅ DASHBOARD ENDPOINT (NEW)
-# =============================
-@app.get("/dashboard")
-def get_dashboard():
-    """Serve the dashboard HTML file"""
-    try:
-        with open("dashboard.html", "r") as f:
-            return HTMLResponse(content=f.read())
-    except FileNotFoundError:
-        return {"error": "Dashboard not found. Make sure dashboard.html exists in root folder"}
-    except Exception as e:
-        return {"error": f"Error loading dashboard: {str(e)}"}
-
-# =============================
-# STRIPE SUCCESS / CANCEL
-# =============================
 
 @app.get("/success")
 def success():
-    return {"message": "✅ Payment successful! Welcome to Benergy 🎉"}
+    """Redirect after successful payment"""
+    return RedirectResponse(url=STRIPE_SUCCESS_URL, status_code=303)
+
 
 @app.get("/cancel")
 def cancel():
-    return {"message": "❌ Payment cancelled"}
+    """Redirect after payment cancel"""
+    return RedirectResponse(url=STRIPE_CANCEL_URL, status_code=303)
 
-# =============================
-# STRIPE WEBHOOK
-# =============================
+
+# ================= STRIPE WEBHOOK =================
 
 @app.post("/stripe-webhook")
 async def stripe_webhook(request: Request):
     """Handle Stripe webhook events"""
-    
     payload = await request.body()
     sig_header = request.headers.get("Stripe-Signature")
 
@@ -377,47 +414,158 @@ async def stripe_webhook(request: Request):
             sig_header,
             STRIPE_WEBHOOK_SECRET
         )
-
-    except ValueError:
+    except ValueError as e:
+        print(f"❌ Webhook error (invalid payload): {str(e)}")
         return {"error": "Invalid payload"}
-    except stripe.error.SignatureVerificationError:
+    except stripe.error.SignatureVerificationError as e:
+        print(f"❌ Webhook error (invalid signature): {str(e)}")
         return {"error": "Invalid signature"}
 
-    # Handle successful checkout
+    # Handle checkout completed
     if event["type"] == "checkout.session.completed":
-
         session = event["data"]["object"]
+        user_id = session["metadata"].get("user_id", "unknown")
+        plan = session["metadata"].get("plan", "unknown")
+        
+        print(f"\n✅ PAYMENT COMPLETED")
+        print(f"   User: {user_id}")
+        print(f"   Plan: {plan}")
+        print(f"   Session: {session.get('subscription')}")
 
-        user_id = session["metadata"].get("user_id")
-        plan = session["metadata"].get("plan")
+        db = SessionLocal()
+        try:
+            subscription = db.query(Subscription).filter(
+                Subscription.user_id == user_id
+            ).first()
+            
+            if subscription:
+                subscription.plan = plan
+                subscription.stripe_subscription_id = session.get("subscription")
+                subscription.updated_at = datetime.utcnow()
+            else:
+                subscription = Subscription(
+                    user_id=user_id,
+                    plan=plan,
+                    stripe_subscription_id=session.get("subscription")
+                )
+                db.add(subscription)
+            db.commit()
+            print(f"✅ Subscription saved to DB")
+        finally:
+            db.close()
 
-        print(f"✅ Payment completed: user_id={user_id}, plan={plan}")
+    return {"status": "✅ success"}
 
-        # Update user subscription in database
-        conn = sqlite3.connect(DB_NAME)
-        c = conn.cursor()
 
-        c.execute("""
-        UPDATE subscriptions
-        SET plan = ?, updated_at = ?
-        WHERE user_id = ?
-        """, (plan, int(time.time()), user_id))
+# ================= CONTACT FORM =================
 
-        conn.commit()
-        conn.close()
+@app.post("/contact")
+async def contact_form(data: dict):
+    """Handle contact form submission"""
+    name = data.get("name", "").strip()
+    email = data.get("email", "").strip()
+    company = data.get("company", "").strip()
+    message = data.get("message", "").strip()
 
-    return {"status": "success"}
+    print(f"\n📧 CONTACT FORM")
+    print(f"   Name: {name}")
+    print(f"   Email: {email}")
+    print(f"   Company: {company}")
 
-# =============================
-# HEALTH CHECK
-# =============================
+    if not all([name, email]):
+        return {"error": "❌ Name and email required"}
 
-@app.get("/health")
-def health():
-    return {
-        "status": "ok",
-        "api": "benergy",
-        "version": "5.1",
-        "stripe": "connected" if stripe.api_key else "not configured",
-        "database": "sqlite3"
-    }
+    try:
+        msg = MIMEMultipart()
+        msg["From"] = SENDER_EMAIL
+        msg["To"] = CONTACT_EMAIL
+        msg["Subject"] = f"📧 Contact: {name} ({company if company else 'N/A'})"
+
+        body = f"""
+Benergy Contact Form
+
+Name: {name}
+Email: {email}
+Company: {company if company else 'Not provided'}
+
+Message:
+{message if message else '(No message)'}
+
+---
+Reply to: {email}
+        """
+
+        msg.attach(MIMEText(body, "plain"))
+
+        if SENDER_PASSWORD and SENDER_EMAIL != "noreply@benergy.io":
+            try:
+                server = smtplib.SMTP("smtp.gmail.com", 587)
+                server.starttls()
+                server.login(SENDER_EMAIL, SENDER_PASSWORD)
+                server.send_message(msg)
+                server.quit()
+                
+                print(f"✅ Email sent to {CONTACT_EMAIL}")
+                return {
+                    "status": "✅ success",
+                    "message": "Thanks! We'll contact you within 24 hours."
+                }
+            except Exception as e:
+                print(f"⚠️ Email send failed: {str(e)}")
+                print(f"💾 Contact info logged: {name} <{email}>")
+                return {
+                    "status": "✅ received",
+                    "message": "Thanks! We'll get back to you soon."
+                }
+        else:
+            print(f"💾 Contact logged (email not configured):")
+            print(body)
+            return {
+                "status": "✅ received",
+                "message": "Thanks! We'll get back to you soon."
+            }
+
+    except Exception as e:
+        print(f"❌ Contact form error: {str(e)}")
+        return {"error": f"❌ Error: {str(e)}"}
+
+
+# ================= USER ENDPOINTS =================
+
+@app.get("/create-user")
+def create_user(email: str = "user@example.com"):
+    """Create a test user"""
+    user_id = str(uuid.uuid4())
+    api_key = str(uuid.uuid4())
+    
+    db = SessionLocal()
+    try:
+        user = User(email=email, api_key=api_key)
+        subscription = Subscription(user_id=user_id, plan="free")
+        
+        db.add(user)
+        db.add(subscription)
+        db.commit()
+        
+        print(f"✅ User created: {user_id}")
+        
+        return {
+            "status": "✅ success",
+            "user_id": user_id,
+            "api_key": api_key,
+            "email": email,
+            "plan": "free"
+        }
+    except Exception as e:
+        print(f"❌ User creation error: {str(e)}")
+        return {"error": f"❌ Error: {str(e)}"}
+    finally:
+        db.close()
+
+
+# ================= MAIN =================
+
+if __name__ == "__main__":
+    import uvicorn
+    print("\n🚀 Starting Benergy API...\n")
+    uvicorn.run(app, host="0.0.0.0", port=8000)
