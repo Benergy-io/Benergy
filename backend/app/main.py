@@ -795,6 +795,21 @@ Reply to: {email}
         print(f"❌ Contact form error: {str(e)}")
         return {"error": f"Error: {str(e)}"}
 
+@app.post("/waitlist")
+async def waitlist(data: dict):
+    """Add email to waitlist"""
+    email = data.get("email", "").strip()
+    
+    if not email:
+        return {"error": "Email required"}
+    
+    print(f"📧 Waitlist: {email}")
+    
+    return {
+        "status": "✅ success",
+        "message": "Added to waitlist",
+        "email": email
+    }
 
 # ================= MAIN =================
 
