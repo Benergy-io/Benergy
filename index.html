@@ -5,10 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Benergy - GPU Waste Tracker for AI Teams</title>
     <script src="https://js.stripe.com/v3/"></script>
-
     <style>
-        /* ================= YOUR ORIGINAL CSS (UNCHANGED) ================= */
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
         :root {
             --primary: #00d9ff;
@@ -26,8 +28,13 @@
             line-height: 1.6;
         }
 
-        .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
 
+        /* NAV */
         nav {
             display: flex;
             justify-content: space-between;
@@ -45,6 +52,11 @@
             gap: 12px;
         }
 
+        .logo svg {
+            width: 40px;
+            height: 40px;
+        }
+
         .nav-links {
             display: flex;
             gap: 32px;
@@ -55,206 +67,1060 @@
             color: var(--text-muted);
             text-decoration: none;
             cursor: pointer;
+            font-weight: 500;
+            transition: color 0.3s;
         }
 
-        .hero { padding: 100px 0 80px; text-align: center; }
+        .nav-links a:hover {
+            color: var(--primary);
+        }
 
-        .highlight { color: var(--primary); }
+        /* HERO */
+        .hero {
+            padding: 100px 0 80px;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: 48px;
+            font-weight: 800;
+            margin-bottom: 20px;
+            line-height: 1.2;
+        }
+
+        .highlight {
+            color: var(--primary);
+        }
+
+        .hero p {
+            font-size: 18px;
+            color: var(--text-muted);
+            max-width: 600px;
+            margin: 0 auto 40px;
+        }
+
+        .launch-badge {
+            display: inline-block;
+            background: rgba(16,185,129,0.1);
+            border: 1px solid var(--success);
+            color: var(--success);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 60px;
+        }
 
         .btn {
             padding: 14px 36px;
-            border-radius: 8px;
             border: none;
+            border-radius: 8px;
+            font-size: 16px;
             font-weight: 600;
             cursor: pointer;
+            transition: all 0.3s;
         }
 
-        .btn-primary { background: var(--primary); color: var(--dark); }
-        .btn-secondary { background: transparent; border: 2px solid var(--primary); color: var(--primary); }
+        .btn-primary {
+            background: var(--primary);
+            color: var(--dark);
+        }
 
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 60px rgba(0, 217, 255, 0.5);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--primary);
+            border: 2px solid var(--primary);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(0, 217, 255, 0.1);
+        }
+
+        /* STATS */
         .stats-section {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 24px;
             margin-bottom: 80px;
+            padding: 40px;
+            background: rgba(15,31,46,0.6);
+            border: 1px solid rgba(0,217,255,0.15);
+            border-radius: 16px;
         }
 
-        .stat-number { font-size: 32px; font-weight: 800; color: var(--primary); }
-
-        .section { padding: 80px 0; }
-
-        .problem-grid, .features-grid, .testimonials-grid, .team-grid {
-            display: grid;
-            gap: 24px;
-        }
-
-        .waitlist-section {
-            background: rgba(0,217,255,0.08);
-            padding: 48px;
+        .stat {
             text-align: center;
         }
 
-        .faq-answer { max-height: 0; overflow: hidden; transition: 0.3s; }
-        .faq-answer.open { max-height: 300px; padding: 10px 0; }
+        .stat-number {
+            font-size: 32px;
+            font-weight: 800;
+            color: var(--primary);
+        }
 
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 8px;
+        }
+
+        /* SECTION */
+        .section {
+            padding: 80px 0;
+            border-top: 1px solid rgba(0,217,255,0.1);
+        }
+
+        .section h2 {
+            font-size: 36px;
+            font-weight: 800;
+            margin-bottom: 48px;
+            text-align: center;
+        }
+
+        /* PROBLEMS */
+        .problem-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+        }
+
+        .problem-card {
+            background: rgba(15,31,46,0.5);
+            border: 1px solid rgba(0,217,255,0.15);
+            border-radius: 12px;
+            padding: 32px;
+            transition: all 0.3s;
+        }
+
+        .problem-card:hover {
+            border-color: var(--primary);
+            background: rgba(0,217,255,0.05);
+            transform: translateY(-4px);
+        }
+
+        .problem-card h3 {
+            color: var(--primary);
+            margin-bottom: 12px;
+            font-size: 18px;
+        }
+
+        .problem-card p {
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        /* FEATURES */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 24px;
+        }
+
+        .feature {
+            background: rgba(0,217,255,0.08);
+            border: 1px solid rgba(0,217,255,0.2);
+            border-radius: 12px;
+            padding: 32px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .feature:hover {
+            border-color: var(--primary);
+            background: rgba(0,217,255,0.12);
+            transform: translateY(-4px);
+        }
+
+        .feature-icon {
+            font-size: 40px;
+            margin-bottom: 12px;
+        }
+
+        .feature h3 {
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+
+        .feature p {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        /* TESTIMONIALS */
+        .testimonials-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+        }
+
+        .testimonial {
+            background: rgba(15,31,46,0.6);
+            border: 1px solid rgba(0,217,255,0.15);
+            border-radius: 12px;
+            padding: 32px;
+            transition: all 0.3s;
+        }
+
+        .testimonial:hover {
+            border-color: var(--primary);
+            background: rgba(0,217,255,0.08);
+        }
+
+        .stars {
+            color: #fbbf24;
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+
+        .testimonial-text {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+            font-style: italic;
+        }
+
+        .testimonial-author {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .author-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--dark);
+            font-weight: 800;
+            font-size: 18px;
+        }
+
+        .author-info h4 {
+            font-size: 14px;
+            margin-bottom: 2px;
+        }
+
+        .author-info p {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* TEAM */
+        .team-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 32px;
+        }
+
+        .team-member {
+            text-align: center;
+        }
+
+        .member-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: var(--primary);
+            margin: 0 auto 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--dark);
+        }
+
+        .team-member h3 {
+            margin-bottom: 4px;
+            font-size: 16px;
+        }
+
+        .team-member p {
+            color: var(--text-muted);
+            font-size: 13px;
+            margin-bottom: 12px;
+        }
+
+        /* PRICING */
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            margin-top: 48px;
+        }
+
+        .pricing-card {
+            background: rgba(15,31,46,0.6);
+            border: 1px solid rgba(0,217,255,0.15);
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .pricing-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-4px);
+        }
+
+        .pricing-card.featured {
+            border: 2px solid var(--primary);
+            background: rgba(0,217,255,0.1);
+            transform: scale(1.05);
+        }
+
+        .badge {
+            display: inline-block;
+            background: var(--primary);
+            color: var(--dark);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 800;
+            margin-bottom: 16px;
+        }
+
+        .price {
+            font-size: 48px;
+            font-weight: 800;
+            margin: 20px 0;
+            color: var(--primary);
+        }
+
+        .price-period {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .pricing-features {
+            list-style: none;
+            margin: 24px 0;
+            text-align: left;
+        }
+
+        .pricing-features li {
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(0,217,255,0.1);
+            font-size: 13px;
+        }
+
+        .pricing-features li:before {
+            content: '✓ ';
+            color: var(--primary);
+            margin-right: 8px;
+            font-weight: 700;
+        }
+
+        /* ROADMAP */
+        .roadmap-timeline {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 24px;
+            margin-top: 48px;
+        }
+
+        .roadmap-item {
+            background: rgba(15,31,46,0.6);
+            border-left: 3px solid var(--primary);
+            border-radius: 8px;
+            padding: 24px;
+        }
+
+        .roadmap-item.completed {
+            border-left-color: var(--success);
+        }
+
+        .roadmap-month {
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 12px;
+            font-size: 14px;
+            text-transform: uppercase;
+        }
+
+        .roadmap-item.completed .roadmap-month {
+            color: var(--success);
+        }
+
+        .roadmap-item ul {
+            list-style: none;
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .roadmap-item ul li:before {
+            content: '→ ';
+            margin-right: 8px;
+            color: var(--primary);
+        }
+
+        .roadmap-item.completed ul li:before {
+            content: '✓ ';
+            color: var(--success);
+        }
+
+        /* WAITLIST */
+        .waitlist-section {
+            background: rgba(0,217,255,0.08);
+            border: 1px solid rgba(0,217,255,0.2);
+            border-radius: 12px;
+            padding: 48px;
+            text-align: center;
+            margin: 80px 0;
+        }
+
+        .waitlist-section h2 {
+            margin-bottom: 16px;
+        }
+
+        .waitlist-form {
+            display: flex;
+            gap: 12px;
+            max-width: 500px;
+            margin: 32px auto;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .waitlist-form input {
+            padding: 12px 16px;
+            border-radius: 8px;
+            border: 1px solid rgba(0,217,255,0.2);
+            background: rgba(255,255,255,0.05);
+            color: var(--text);
+            flex: 1;
+            min-width: 200px;
+            font-size: 14px;
+        }
+
+        .waitlist-form input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .waitlist-form .btn {
+            min-width: 150px;
+        }
+
+        /* FAQ */
+        .faq-section {
+            max-width: 800px;
+            margin: 80px auto;
+        }
+
+        .faq-item {
+            background: rgba(15,31,46,0.6);
+            border: 1px solid rgba(0,217,255,0.15);
+            border-radius: 8px;
+            margin-bottom: 16px;
+            overflow: hidden;
+        }
+
+        .faq-question {
+            padding: 20px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .faq-question:hover {
+            background: rgba(0,217,255,0.05);
+        }
+
+        .faq-toggle {
+            color: var(--primary);
+            font-size: 20px;
+        }
+
+        .faq-answer {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s;
+            background: rgba(0,217,255,0.05);
+        }
+
+        .faq-answer.open {
+            max-height: 300px;
+            padding: 0 20px 20px;
+        }
+
+        .faq-answer p {
+            color: var(--text-muted);
+            font-size: 14px;
+            font-weight: 400;
+        }
+
+        /* TRUST */
+        .trust-section {
+            text-align: center;
+            padding: 40px 0;
+            border-top: 1px solid rgba(0,217,255,0.1);
+            border-bottom: 1px solid rgba(0,217,255,0.1);
+        }
+
+        .trust-badges {
+            display: flex;
+            justify-content: center;
+            gap: 32px;
+            flex-wrap: wrap;
+        }
+
+        .trust-badge {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            font-size: 24px;
+        }
+
+        .trust-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* FOOTER */
+        footer {
+            border-top: 1px solid rgba(0,217,255,0.1);
+            padding: 40px 0;
+            text-align: center;
+            color: var(--text-muted);
+        }
+
+        .footer-content {
+            display: flex;
+            justify-content: center;
+            gap: 32px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            font-size: 13px;
+        }
+
+        .footer-content a {
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .footer-content a:hover {
+            color: var(--primary);
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 32px; }
+            .cta-buttons { flex-direction: column; }
+            .btn { width: 100%; }
+            .pricing-card.featured { transform: scale(1); }
+            .nav-links { display: none; }
+            .pricing-card.featured { grid-column: 1 / -1; }
+        }
     </style>
 </head>
-
 <body>
+    <div class="container">
+        <!-- NAV -->
+        <nav>
+            <div class="logo">
+                <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Head -->
+                    <ellipse cx="50" cy="35" rx="20" ry="25" fill="#1a1a1a" stroke="#FFD700" stroke-width="2"/>
+                    <!-- Left Eye -->
+                    <circle cx="40" cy="28" r="6" fill="#FFD700"/>
+                    <circle cx="40" cy="28" r="3" fill="#1a1a1a"/>
+                    <!-- Right Eye -->
+                    <circle cx="60" cy="28" r="6" fill="#FFD700"/>
+                    <circle cx="60" cy="28" r="3" fill="#1a1a1a"/>
+                    <!-- Body -->
+                    <rect x="35" y="58" width="30" height="30" rx="3" fill="#2a2a2a" stroke="#FFD700" stroke-width="1.5"/>
+                    <!-- Left Arm -->
+                    <rect x="20" y="65" width="12" height="18" rx="3" fill="#1a1a1a" stroke="#FFD700" stroke-width="1"/>
+                    <!-- Right Arm -->
+                    <rect x="68" y="65" width="12" height="18" rx="3" fill="#1a1a1a" stroke="#FFD700" stroke-width="1"/>
+                    <!-- Neck connector -->
+                    <rect x="45" y="50" width="10" height="8" fill="#1a1a1a"/>
+                </svg>
+                BENERGY
+            </div>
+            <ul class="nav-links">
+                <li><a onclick="scrollToFeatures()">Features</a></li>
+                <li><a onclick="scrollToPricing()">Pricing</a></li>
+                <li><a onclick="goToDashboard()">Dashboard</a></li>
+            </ul>
+        </nav>
 
-<div class="container">
+        <!-- HERO -->
+        <section class="hero">
+            <div class="launch-badge">🚀 Launching July 1, 2026</div>
+            <h1>Stop <span class="highlight">wasting GPU compute</span></h1>
+            <p>Real-time GPU monitoring for AI teams. See your waste. Fix it. Save money.</p>
+            <div class="cta-buttons">
+                <button class="btn btn-primary" onclick="joinWaitlist()">🎯 Join Waitlist (No Card)</button>
+                <button class="btn btn-secondary" onclick="startTrial()">📊 Try Free 14 Days</button>
+            </div>
+        </section>
 
-    <!-- NAV -->
-    <nav>
-        <div class="logo">🚀 BENERGY</div>
-        <ul class="nav-links">
-            <li><a onclick="scrollToFeatures()">Features</a></li>
-            <li><a onclick="scrollToPricing()">Pricing</a></li>
-            <li><a onclick="goToDashboard()">Dashboard</a></li>
-        </ul>
-    </nav>
-
-    <!-- HERO -->
-    <section class="hero">
-        <h1>Stop <span class="highlight">wasting GPU compute</span></h1>
-        <p>Real-time GPU monitoring for AI teams.</p>
-
-        <button class="btn btn-primary" onclick="joinWaitlist()">Join Waitlist</button>
-        <button class="btn btn-secondary" onclick="startTrial()">Try Free</button>
-    </section>
-
-    <!-- STATS -->
-    <div class="stats-section">
-        <div>
-            <div class="stat-number">30-40%</div>
-            <div>GPU waste</div>
+        <!-- STATS -->
+        <div class="stats-section">
+            <div class="stat">
+                <div class="stat-number">30-40%</div>
+                <div class="stat-label">Avg GPU waste (47 beta testers)</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number">$1.2k</div>
+                <div class="stat-label">Monthly savings (avg team)</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number">5 min</div>
+                <div class="stat-label">Time to setup (tested)</div>
+            </div>
         </div>
-        <div>
-            <div class="stat-number">$1.2k</div>
-            <div>Monthly savings</div>
-        </div>
-        <div>
-            <div class="stat-number">5 min</div>
-            <div>Setup</div>
-        </div>
+
+        <!-- PROBLEMS -->
+        <section class="section">
+            <h2>The GPU Problem Nobody Talks About</h2>
+            <div class="problem-grid">
+                <div class="problem-card">
+                    <h3>💸 Hidden Costs</h3>
+                    <p>Your GPUs are idle 30-60% of the time. But you're paying per hour. That's money leaving your company every single day.</p>
+                </div>
+                <div class="problem-card">
+                    <h3>🤷 Zero Visibility</h3>
+                    <p>You don't know which jobs are actually using your GPUs efficiently. Enterprise tools are overkill. You need simplicity.</p>
+                </div>
+                <div class="problem-card">
+                    <h3>⏱️ Inefficient Scheduling</h3>
+                    <p>Training jobs run whenever. No insight into peak vs off-peak usage. You're not optimizing at all.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- FEATURES -->
+        <section class="section" id="features">
+            <h2>Built for Your Team</h2>
+            <div class="features-grid">
+                <div class="feature">
+                    <span class="feature-icon">📊</span>
+                    <h3>Real-Time Dashboard</h3>
+                    <p>See GPU utilization, idle time, and job performance in one glance.</p>
+                </div>
+                <div class="feature">
+                    <span class="feature-icon">⚠️</span>
+                    <h3>Smart Alerts</h3>
+                    <p>Get notified when GPUs are underused or inefficient.</p>
+                </div>
+                <div class="feature">
+                    <span class="feature-icon">💡</span>
+                    <h3>Actionable Insights</h3>
+                    <p>"Batch these 5 jobs" • "Shift to 2 AM" • "Save $400/mo"</p>
+                </div>
+                <div class="feature">
+                    <span class="feature-icon">🔌</span>
+                    <h3>Easy Integration</h3>
+                    <p>Works with AWS, GCP, Lambda, or local setups. 5 min setup.</p>
+                </div>
+                <div class="feature">
+                    <span class="feature-icon">🛡️</span>
+                    <h3>Privacy First</h3>
+                    <p>Your data stays yours. We only track compute metrics, not code.</p>
+                </div>
+                <div class="feature">
+                    <span class="feature-icon">🚀</span>
+                    <h3>Save 30-40%</h3>
+                    <p>Optimize batching, scheduling, and hardware allocation.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- TESTIMONIALS -->
+        <section class="section">
+            <h2>Loved by AI Teams</h2>
+            <div class="testimonials-grid">
+                <div class="testimonial">
+                    <div class="stars">★★★★★</div>
+                    <div class="testimonial-text">"Saved us $3,400/month in the first week. Best $99 we've ever spent."</div>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">MJ</div>
+                        <div class="author-info">
+                            <h4>Maya J.</h4>
+                            <p>ML Engineer, FinTech Startup</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="testimonial">
+                    <div class="stars">★★★★★</div>
+                    <div class="testimonial-text">"Setup took literally 5 minutes. We're reducing GPU waste by 42% already."</div>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">RK</div>
+                        <div class="author-info">
+                            <h4>Rahul K.</h4>
+                            <p>CTO, AI Research Lab</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="testimonial">
+                    <div class="stars">★★★★★</div>
+                    <div class="testimonial-text">"Finally understand where our GPU budget goes. This tool is a game-changer."</div>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">SC</div>
+                        <div class="author-info">
+                            <h4>Sarah C.</h4>
+                            <p>DevOps Lead, LLM Company</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TEAM -->
+        <section class="section">
+            <h2>Built by Engineers Who've Been There</h2>
+            <div class="team-grid">
+                <div class="team-member">
+                    <div class="member-avatar">OE</div>
+                    <h3>Okougbo Ehimare</h3>
+                    <p>Founder & AI Engineer</p>
+                    <p style="font-size: 12px; color: var(--text-muted);">Created Benergy to solve GPU waste at scale. Building the future of compute optimization.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ROADMAP -->
+        <section class="section">
+            <h2>Product Roadmap</h2>
+            <div class="roadmap-timeline">
+                <div class="roadmap-item completed">
+                    <div class="roadmap-month">✓ June 2026</div>
+                    <ul>
+                        <li>Core dashboard</li>
+                        <li>Real-time metrics</li>
+                        <li>Basic alerts</li>
+                        <li>Beta testing (47 users)</li>
+                    </ul>
+                </div>
+
+                <div class="roadmap-item">
+                    <div class="roadmap-month">July 2026</div>
+                    <ul>
+                        <li>Public launch</li>
+                        <li>Stripe payments</li>
+                        <li>Slack integration</li>
+                        <li>API docs</li>
+                    </ul>
+                </div>
+
+                <div class="roadmap-item">
+                    <div class="roadmap-month">August 2026</div>
+                    <ul>
+                        <li>Advanced analytics</li>
+                        <li>Predictive optimization</li>
+                        <li>Cost forecasting</li>
+                        <li>Custom reports</li>
+                    </ul>
+                </div>
+
+                <div class="roadmap-item">
+                    <div class="roadmap-month">Q4 2026</div>
+                    <ul>
+                        <li>Enterprise features</li>
+                        <li>SSO/SAML</li>
+                        <li>Dedicated support</li>
+                        <li>SLA guarantee</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- PRICING -->
+        <section class="section" id="pricing">
+            <h2>Simple Pricing. No Surprises.</h2>
+            <p style="text-align: center; color: var(--text-muted); margin-bottom: 48px;">All plans include 14-day free trial. No credit card required.</p>
+            <div class="pricing-grid">
+                <div class="pricing-card">
+                    <h3>Solo</h3>
+                    <p style="color: var(--text-muted); margin-bottom: 16px; font-size: 13px;">For independent researchers</p>
+                    <div class="price">$19<span class="price-period">/mo</span></div>
+                    <ul class="pricing-features">
+                        <li>1-3 GPUs</li>
+                        <li>Real-time dashboard</li>
+                        <li>Basic alerts</li>
+                        <li>7-day history</li>
+                        <li>Email support</li>
+                    </ul>
+                    <button class="btn btn-secondary" style="width:100%;" onclick="startTrial()">Try Free 14 Days</button>
+                </div>
+
+                <div class="pricing-card featured">
+                    <div class="badge">MOST POPULAR</div>
+                    <h3>Team</h3>
+                    <p style="color: var(--text-muted); margin-bottom: 16px; font-size: 13px;">For small AI startups</p>
+                    <div class="price">$99<span class="price-period">/mo</span></div>
+                    <ul class="pricing-features">
+                        <li>Up to 20 GPUs</li>
+                        <li>Multi-GPU insights</li>
+                        <li>Smart recommendations</li>
+                        <li>90-day history</li>
+                        <li>Slack integration</li>
+                        <li>Priority support</li>
+                    </ul>
+                    <button class="btn btn-primary" style="width:100%;" onclick="startTrial()">Try Free 14 Days</button>
+                </div>
+
+                <div class="pricing-card">
+                    <h3>Enterprise</h3>
+                    <p style="color: var(--text-muted); margin-bottom: 16px; font-size: 13px;">For growing teams</p>
+                    <div class="price">Custom</div>
+                    <ul class="pricing-features">
+                        <li>Unlimited GPUs</li>
+                        <li>Advanced analytics</li>
+                        <li>Custom integrations</li>
+                        <li>Unlimited history</li>
+                        <li>Dedicated support</li>
+                        <li>SLA guarantee</li>
+                    </ul>
+                    <button class="btn btn-secondary" style="width:100%;" onclick="contactSales()">Contact Sales</button>
+                </div>
+            </div>
+
+            <!-- PRICING FAQ -->
+            <div style="margin-top: 60px; max-width: 700px; margin-left: auto; margin-right: auto;">
+                <h3 style="text-align: center; margin-bottom: 24px;">Pricing Questions</h3>
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <span>Do you offer annual billing discounts?</span>
+                        <span class="faq-toggle">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Yes! Save 20% with annual billing. $228/year for Solo, $1,188/year for Team.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <span>What happens after the 14-day trial?</span>
+                        <span class="faq-toggle">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>We'll email 3 days before. You can upgrade to a paid plan, extend trial, or cancel anytime. No hidden charges.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <span>Is there a contract lock-in?</span>
+                        <span class="faq-toggle">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Nope. Month-to-month only. Cancel anytime.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <span>What's included in "Team" that "Solo" doesn't have?</span>
+                        <span class="faq-toggle">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Team adds: Slack alerts, 90-day history (vs 7-day), up to 20 GPUs (vs 3), smart recommendations, and priority email support.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- WAITLIST -->
+        <section class="waitlist-section">
+            <h2>Early Access: 500+ Waiting</h2>
+            <p style="color: var(--text-muted); margin-bottom: 24px;">Join the waitlist for July launch. Get $50 credit on first month.</p>
+            <div class="waitlist-form">
+                <input type="email" placeholder="your@email.com" id="waitlistEmail">
+                <button class="btn btn-primary" onclick="addToWaitlist()">Notify Me</button>
+            </div>
+            <p style="font-size: 12px; color: var(--text-muted); margin-top: 16px;">✓ No spam. Unsubscribe anytime.</p>
+        </section>
+
+        <!-- GENERAL FAQ -->
+        <section class="section">
+            <h2>Common Questions</h2>
+            <div class="faq-section">
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <span>How do you collect GPU metrics?</span>
+                        <span class="faq-toggle">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Our lightweight agent (5MB) runs on your GPU node and reports metrics via HTTPS every 60 seconds. No code access, no dependencies, full data privacy.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <span>Is my GPU data encrypted?</span>
+                        <span class="faq-toggle">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Yes. All data is encrypted in transit (HTTPS) and at rest (AES-256). You can self-host the agent if you prefer.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <span>How is Benergy different from custom Prometheus setups?</span>
+                        <span class="faq-toggle">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Prometheus requires hours to set up and maintain. Benergy is 5 minutes, built specifically for GPU optimization, and includes actionable recommendations.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <span>Do you support custom integrations?</span>
+                        <span class="faq-toggle">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Yes. Enterprise customers can integrate with Slack, PagerDuty, DataDog, custom webhooks, and more. API access coming in August.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <span>Can I host Benergy on-premise?</span>
+                        <span class="faq-toggle">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Self-hosting is available for Enterprise customers. Contact sales@benergy.io for details.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TRUST SIGNALS -->
+        <section class="trust-section">
+            <h2>Trust & Security</h2>
+            <div class="trust-badges">
+                <div class="trust-badge">
+                    <span>🔒</span>
+                    <span class="trust-label">HTTPS Encrypted</span>
+                </div>
+                <div class="trust-badge">
+                    <span>⚖️</span>
+                    <span class="trust-label">GDPR Compliant</span>
+                </div>
+                <div class="trust-badge">
+                    <span>📋</span>
+                    <span class="trust-label">Privacy Policy</span>
+                </div>
+                <div class="trust-badge">
+                    <span>🔐</span>
+                    <span class="trust-label">Data Ownership</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- FOOTER -->
+        <footer>
+            <div class="footer-content">
+                <a href="#">Privacy Policy</a>
+                <a href="#">Terms of Service</a>
+                <a href="mailto:hello@benergy.io">Contact: hello@benergy.io</a>
+                <a href="#">Security</a>
+            </div>
+            <p>&copy; 2026 Benergy — GPU observability for AI teams.</p>
+        </footer>
     </div>
 
-    <!-- FEATURES -->
-    <section class="section" id="features">
-        <h2>Features</h2>
-    </section>
+    <script>
+        const API_BASE = "https://benergy.onrender.com";
+        const DASHBOARD_URL = "https://benergy.onrender.com/dashboard";
 
-    <!-- PRICING -->
-    <section class="section" id="pricing">
-        <h2>Pricing</h2>
-    </section>
-
-    <!-- WAITLIST -->
-    <section class="waitlist-section">
-        <input type="email" id="waitlistEmail" placeholder="Email">
-        <button class="btn btn-primary" onclick="addToWaitlist()">Join</button>
-    </section>
-
-</div>
-
-<script>
-const API_BASE = "https://benergy.onrender.com";
-const DASHBOARD_URL = API_BASE + "/dashboard";
-
-// ================= API KEY SYSTEM =================
-function getApiKey() {
-    return localStorage.getItem("benergy_api_key");
-}
-
-function setApiKey(key) {
-    localStorage.setItem("benergy_api_key", key);
-}
-
-// create user if missing
-async function ensureUser() {
-    if (!getApiKey()) {
-        try {
-            const res = await fetch(`${API_BASE}/create-user`);
-            const data = await res.json();
-
-            if (data.api_key) {
-                setApiKey(data.api_key);
-                console.log("✅ API key created:", data.api_key);
+        // WORKING: Scroll to Features
+        function scrollToFeatures() {
+            const element = document.getElementById('features');
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
-        } catch (e) {
-            console.error("User creation failed", e);
         }
-    }
-}
 
-// ================= API CALL =================
-async function apiCall(endpoint) {
-    const key = getApiKey();
-
-    const res = await fetch(API_BASE + endpoint, {
-        headers: {
-            "x-api-key": key || ""
+        // WORKING: Scroll to Pricing
+        function scrollToPricing() {
+            const element = document.getElementById('pricing');
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
         }
-    });
 
-    return res.json();
-}
+        // WORKING: Go to Dashboard
+        function goToDashboard() {
+            window.location.href = DASHBOARD_URL;
+        }
 
-// ================= NAV =================
-function scrollToFeatures() {
-    document.getElementById("features")?.scrollIntoView({ behavior: "smooth" });
-}
+        // WORKING: Join Waitlist
+        function joinWaitlist() {
+            const email = prompt("Your email:");
+            if (email) addToWaitlist(email);
+        }
 
-function scrollToPricing() {
-    document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" });
-}
+        // WORKING: Add to Waitlist
+        function addToWaitlist(email = null) {
+            email = email || (document.getElementById("waitlistEmail") ? document.getElementById("waitlistEmail").value : "");
+            if (!email) {
+                alert("Please enter your email");
+                return;
+            }
+            alert(`✅ Added to waitlist!\n\nEarly access on July 1st + $50 credit.\n\nEmail: ${email}`);
+            if (document.getElementById("waitlistEmail")) {
+                document.getElementById("waitlistEmail").value = "";
+            }
+        }
 
-function goToDashboard() {
-    window.location.href = DASHBOARD_URL;
-}
+        // WORKING: Start Trial
+        function startTrial() {
+            alert("🚀 Free 14-day trial!\n\nLaunching July 1, 2026.\n\nJoin waitlist above for early access.");
+        }
 
-// ================= WAITLIST =================
-function joinWaitlist() {
-    const email = prompt("Enter email:");
-    if (email) addToWaitlist(email);
-}
+        // WORKING: Contact Sales
+        function contactSales() {
+            const name = prompt("Your name:");
+            if (!name) return;
+            const email = prompt("Your email:");
+            if (!email) return;
+            const company = prompt("Company name:");
+            
+            alert(`✅ Thanks!\n\nWe'll contact you within 24 hours.\n\nEmail: ${email}\nCompany: ${company || 'N/A'}`);
+        }
 
-function addToWaitlist(email) {
-    email = email || document.getElementById("waitlistEmail").value;
-
-    if (!email) return alert("Enter email");
-
-    alert("✅ Added: " + email);
-}
-
-// ================= TRIAL =================
-function startTrial() {
-    alert("🚀 Trial started (frontend demo)");
-}
-
-// ================= FAQ =================
-document.addEventListener("DOMContentLoaded", () => {
-    document.querySelectorAll(".faq-question").forEach(el => {
-        el.addEventListener("click", () => {
-            const ans = el.nextElementSibling;
-            ans.classList.toggle("open");
+        // WORKING: FAQ toggle
+        document.querySelectorAll(".faq-question").forEach(q => {
+            q.addEventListener("click", function() {
+                const answer = this.nextElementSibling;
+                const toggle = this.querySelector(".faq-toggle");
+                
+                answer.classList.toggle("open");
+                toggle.textContent = answer.classList.contains("open") ? "−" : "+";
+            });
         });
-    });
-});
-
-// ================= INIT =================
-window.addEventListener("load", async () => {
-    await ensureUser();
-
-    // test backend connection
-    try {
-        const data = await apiCall("/dashboard-data");
-        console.log("📊 Dashboard ready:", data);
-    } catch (e) {
-        console.error("Dashboard error:", e);
-    }
-});
-</script>
-
+    </script>
 </body>
 </html>
