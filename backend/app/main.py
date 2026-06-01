@@ -1,41 +1,36 @@
 from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
-import sqlite3
-import os
+
 import time
-import uuid
-import stripe
 import subprocess
+import os
+import sqlite3
+import uuid
+import json
+import stripe
+import smtplib
 import random
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
-print("🚀 BENERGY CLEAN API STARTING...")
+print("🚀 BENERGY v4.0 - PRODUCTION READY")
 
-app = FastAPI(title="Benergy API", version="4.1")
+app = FastAPI(title="Benergy API", version="4.0")
 
-# ================= SECURITY / CONFIG =================
+# ================= STATIC FILES (FIXED FOR RENDER) =================
+BASE_DIR = os.path.dirname(__file__)
+STATIC_DIR = os.path.join(BASE_DIR, "static")
 
-stripe.api_key = os.getenv("STRIPE_SECRET_KEY")  # DO NOT hardcode
+if not os.path.exists(STATIC_DIR):
+    os.makedirs(STATIC_DIR)
 
-STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
-
-STRIPE_SUCCESS_URL = os.getenv("STRIPE_SUCCESS_URL", "https://benergy-io.github.io/")
-STRIPE_CANCEL_URL = os.getenv("STRIPE_CANCEL_URL", "https://benergy-io.github.io/")
-
-STRIPE_PLANS = {
-    "solo": os.getenv("STRIPE_SOLO_PRICE_ID"),
-    "team": os.getenv("STRIPE_TEAM_PRICE_ID"),
-}
-
-DB_NAME = "benergy.db"
-
-GPU_TYPE = "A100"
-
-PLAN_LIMITS = {
-    "free": 20,
-    "solo": 100,
-    "team": 10000
-}
+app.mount(
+    "/static",
+    StaticFiles(directory=STATIC_DIR),
+    name="static"
+)
 
 # ================= CORS =================
 
@@ -47,202 +42,91 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ================= DB INIT =================
+# ================= DASHBOARD ROUTE (FIXED) =================
 
-def init_db():
-    conn = sqlite3.connect(DB_NAME)
-    c = conn.cursor()
+@app.get("/dashboard")
+def dashboard():
+    file_path = os.path.join(STATIC_DIR, "dashboard.html")
 
-    c.execute("""
-    CREATE TABLE IF NOT EXISTS users (
-        user_id TEXT PRIMARY KEY,
-        api_key TEXT,
-        email TEXT,
-        created_at INTEGER
-    )
-    """)
-
-    c.execute("""
-    CREATE TABLE IF NOT EXISTS subscriptions (
-        user_id TEXT,
-        plan TEXT,
-        updated_at INTEGER
-    )
-    """)
-
-    c.execute("""
-    CREATE TABLE IF NOT EXISTS usage (
-        user_id TEXT,
-        timestamp INTEGER,
-        gpu_util INTEGER,
-        memory_used INTEGER,
-        temperature INTEGER,
-        cost REAL
-    )
-    """)
-
-    conn.commit()
-    conn.close()
-
-init_db()
-
-# ================= HELPERS =================
-
-def create_user(email: str):
-    user_id = str(uuid.uuid4())
-    api_key = str(uuid.uuid4())
-
-    conn = sqlite3.connect(DB_NAME)
-    c = conn.cursor()
-
-    c.execute("INSERT INTO users VALUES (?, ?, ?, ?)",
-              (user_id, api_key, email, int(time.time())))
-
-    c.execute("INSERT INTO subscriptions VALUES (?, ?, ?)",
-              (user_id, "free", int(time.time())))
-
-    conn.commit()
-    conn.close()
+    if os.path.exists(file_path):
+        return FileResponse(file_path, media_type="text/html")
 
     return {
-        "user_id": user_id,
-        "api_key": api_key,
-        "email": email,
-        "plan": "free"
+        "error": "dashboard.html not found",
+        "expected_path": file_path
     }
 
+# ================= HEALTH =================
 
-def get_user(api_key: str):
-    conn = sqlite3.connect(DB_NAME)
-    c = conn.cursor()
+@app.get("/health")
+def health():
+    return {"status": "ok", "service": "benergy-api"}
 
-    c.execute("SELECT user_id FROM users WHERE api_key = ?", (api_key,))
-    row = c.fetchone()
-    conn.close()
-
-    return row[0] if row else None
-
-
-def get_plan(user_id: str):
-    conn = sqlite3.connect(DB_NAME)
-    c = conn.cursor()
-
-    c.execute("SELECT plan FROM subscriptions WHERE user_id = ?", (user_id,))
-    row = c.fetchone()
-    conn.close()
-
-    return row[0] if row else "free"
-
-
-# ================= GPU MOCK =================
-
-def get_gpu_metrics():
-    return {
-        "gpu_utilization": random.randint(20, 90),
-        "memory_used": random.randint(1000, 9000),
-        "temperature": random.randint(40, 80)
-    }
-
-
-def calc_cost():
-    return round(time.time() % 100 / 10, 4)
-
-
-# ================= ROUTES =================
+# ================= ROOT =================
 
 @app.get("/")
 def root():
     return {
-        "status": "running",
-        "version": "4.1",
-        "endpoints": ["/dashboard", "/metrics", "/create-user"]
+        "message": "👽 Benergy GPU Monitoring API",
+        "status": "RUNNING",
+        "version": "4.0",
+        "endpoints": {
+            "dashboard": "/dashboard",
+            "static_dashboard": "/static/dashboard.html",
+            "health": "/health"
+        }
     }
 
-
-@app.get("/health")
-def health():
-    return {"status": "ok"}
-
-
-@app.get("/create-user")
-def new_user(email: str = "user@example.com"):
-    return create_user(email)
-
+# ================= GPU MOCK (SAFE) =================
 
 @app.get("/metrics")
-def metrics(x_api_key: str = Header(None)):
-    if not x_api_key:
-        raise HTTPException(401, "Missing API key")
-
-    user_id = get_user(x_api_key)
-    if not user_id:
-        raise HTTPException(401, "Invalid API key")
-
-    plan = get_plan(user_id)
-
-    gpu = get_gpu_metrics()
-
+def metrics():
     return {
-        "user_id": user_id,
-        "plan": plan,
-        "gpu_utilization": gpu["gpu_utilization"],
-        "memory_used": gpu["memory_used"],
-        "temperature": gpu["temperature"],
-        "total_cost": calc_cost()
+        "gpu_utilization": random.randint(20, 80),
+        "memory_used": random.randint(2000, 8000),
+        "temperature": random.randint(40, 75),
+        "gpu_type": "A100",
+        "status": "success"
     }
 
-
-@app.get("/dashboard", response_class=HTMLResponse)
-def dashboard():
-    return FileResponse("static/dashboard.html")
-
-
-@app.get("/success")
-def success():
-    return RedirectResponse(STRIPE_SUCCESS_URL)
-
-
-@app.get("/cancel")
-def cancel():
-    return RedirectResponse(STRIPE_CANCEL_URL)
-
-
-@app.post("/create-checkout")
-async def create_checkout(data: dict):
-    plan = data.get("plan")
-
-    if not stripe.api_key:
-        return {"error": "Stripe not configured"}
-
-    price_id = STRIPE_PLANS.get(plan)
-
-    if not price_id:
-        return {"error": "Invalid plan"}
-
-    session = stripe.checkout.Session.create(
-        mode="subscription",
-        line_items=[{"price": price_id, "quantity": 1}],
-        success_url=STRIPE_SUCCESS_URL,
-        cancel_url=STRIPE_CANCEL_URL
-    )
-
-    return {"url": session.url}
-    
+# ================= WAITLIST =================
 
 @app.post("/waitlist")
 async def waitlist(data: dict):
-    email = data.get("email")
+    email = data.get("email", "").strip()
 
     if not email:
         return {"error": "Email required"}
 
-    print("WAITLIST:", email)
+    print(f"📧 WAITLIST: {email}")
 
-    return {"status": "ok", "email": email}
+    return {
+        "status": "success",
+        "message": "Added to waitlist",
+        "email": email
+    }
 
+# ================= CONTACT =================
+
+@app.post("/contact")
+async def contact(data: dict):
+    name = data.get("name", "").strip()
+    email = data.get("email", "").strip()
+
+    if not email:
+        return {"error": "Email required"}
+
+    print(f"📧 CONTACT: {name} <{email}>")
+
+    return {
+        "status": "success",
+        "message": "We will contact you soon",
+        "email": email
+    }
 
 # ================= MAIN =================
 
 if __name__ == "__main__":
     import uvicorn
+    print("\n🚀 Starting Benergy API v4.0...\n")
     uvicorn.run(app, host="0.0.0.0", port=8000)
