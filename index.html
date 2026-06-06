@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Benergy GPU Monitoring</title>
+    <title>Benergy - GPU Waste Tracker</title>
     <style>
         * {
             margin: 0;
@@ -11,394 +11,723 @@
             box-sizing: border-box;
         }
 
+        :root {
+            --primary: #00d9ff;
+            --dark: #0a1628;
+            --surface: #0f1f2e;
+            --text: #ffffff;
+            --text-muted: #a0aec0;
+            --success: #10b981;
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #0b1220;
-            color: white;
-            text-align: center;
-            min-height: 100vh;
+            background: linear-gradient(135deg, #0a1628 0%, #0f1f2e 100%);
+            color: var(--text);
+            line-height: 1.6;
         }
 
         .container {
-            padding: 60px 20px;
-            max-width: 1000px;
+            max-width: 1200px;
             margin: 0 auto;
+            padding: 0 24px;
         }
 
-        h1 {
-            color: #38bdf8;
-            font-size: 42px;
-            margin-bottom: 10px;
+        /* NAV */
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 24px 0;
+            border-bottom: 1px solid rgba(0,217,255,0.15);
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--primary);
             display: flex;
             align-items: center;
-            justify-content: center;
-            gap: 10px;
+            gap: 12px;
         }
 
-        .subtitle {
-            color: #94a3b8;
-            margin-bottom: 40px;
-            font-size: 16px;
+        .logo svg {
+            width: 40px;
+            height: 40px;
         }
 
-        .status {
+        .nav-links {
+            display: flex;
+            gap: 32px;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            cursor: pointer;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary);
+        }
+
+        /* HERO */
+        .hero {
+            padding: 100px 0 80px;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: 48px;
+            font-weight: 800;
+            margin-bottom: 20px;
+            line-height: 1.2;
+        }
+
+        .highlight {
+            color: var(--primary);
+        }
+
+        .hero p {
+            font-size: 18px;
+            color: var(--text-muted);
+            max-width: 600px;
+            margin: 0 auto 40px;
+        }
+
+        .launch-badge {
             display: inline-block;
-            background: rgba(56, 189, 248, 0.1);
-            border: 1px solid #38bdf8;
-            color: #38bdf8;
+            background: rgba(16,185,129,0.1);
+            border: 1px solid var(--success);
+            color: var(--success);
             padding: 8px 16px;
             border-radius: 20px;
             font-size: 12px;
-            margin-bottom: 30px;
             font-weight: 600;
-        }
-
-        .api-key-section {
-            background: #111827;
-            padding: 20px;
-            border-radius: 12px;
-            margin-bottom: 30px;
-            text-align: left;
-            max-width: 500px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        .api-key-section label {
-            display: block;
-            margin-bottom: 8px;
-            font-size: 14px;
-            color: #cbd5e1;
-        }
-
-        .api-key-section input {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #334155;
-            background: #1e293b;
-            color: white;
-            border-radius: 8px;
-            font-family: monospace;
-            font-size: 12px;
-        }
-
-        .api-key-section input::placeholder {
-            color: #64748b;
-        }
-
-        .buttons {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 12px;
-            margin-bottom: 40px;
-            max-width: 800px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        button {
-            background: #38bdf8;
-            border: none;
-            padding: 12px 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 14px;
-            transition: all 0.3s;
-            color: #0b1220;
-        }
-
-        button:hover {
-            background: #0ea5e9;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
-        }
-
-        button:active {
-            transform: translateY(0);
-        }
-
-        button:disabled {
-            background: #64748b;
-            cursor: not-allowed;
-            opacity: 0.6;
-        }
-
-        .card {
-            background: #111827;
-            margin: 20px auto;
-            padding: 20px;
-            width: 100%;
-            max-width: 700px;
-            border-radius: 12px;
-            text-align: left;
-            border: 1px solid #1e293b;
-            min-height: 100px;
-        }
-
-        pre {
-            white-space: pre-wrap;
-            word-wrap: break-word;
-            color: #cbd5e1;
-            font-family: 'Courier New', monospace;
-            font-size: 12px;
-            max-height: 400px;
-            overflow-y: auto;
-            line-height: 1.5;
-        }
-
-        .error {
-            color: #f87171;
-            background: rgba(244, 63, 94, 0.1);
-            border-left: 3px solid #f87171;
-            padding: 12px;
-            border-radius: 6px;
-            margin-bottom: 10px;
-        }
-
-        .success {
-            color: #86efac;
-            background: rgba(34, 197, 94, 0.1);
-            border-left: 3px solid #86efac;
-            padding: 12px;
-            border-radius: 6px;
-            margin-bottom: 10px;
-        }
-
-        .loading {
-            color: #38bdf8;
-            font-style: italic;
-        }
-
-        .endpoint-section {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 15px;
-            margin-top: 40px;
-        }
-
-        .endpoint-group {
-            background: #111827;
-            padding: 15px;
-            border-radius: 12px;
-            border: 1px solid #1e293b;
-        }
-
-        .endpoint-group h3 {
-            color: #38bdf8;
-            font-size: 14px;
-            margin-bottom: 10px;
+            margin-bottom: 20px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
 
-        .endpoint-group button {
-            width: 100%;
-            padding: 10px 12px;
-            font-size: 12px;
+        .cta-buttons {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 60px;
         }
 
-        @media (max-width: 640px) {
-            .container {
-                padding: 40px 15px;
-            }
+        .btn {
+            padding: 14px 36px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
 
-            h1 {
-                font-size: 32px;
-            }
+        .btn-primary {
+            background: var(--primary);
+            color: var(--dark);
+        }
 
-            .buttons {
-                grid-template-columns: 1fr;
-            }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 60px rgba(0, 217, 255, 0.5);
+        }
 
-            pre {
-                font-size: 11px;
-            }
+        .btn-secondary {
+            background: transparent;
+            color: var(--primary);
+            border: 2px solid var(--primary);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(0, 217, 255, 0.1);
+        }
+
+        /* STATS */
+        .stats-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 24px;
+            margin-bottom: 80px;
+            padding: 40px;
+            background: rgba(15,31,46,0.6);
+            border: 1px solid rgba(0,217,255,0.15);
+            border-radius: 16px;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 32px;
+            font-weight: 800;
+            color: var(--primary);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 8px;
+        }
+
+        /* SECTION */
+        .section {
+            padding: 80px 0;
+            border-top: 1px solid rgba(0,217,255,0.1);
+        }
+
+        .section h2 {
+            font-size: 36px;
+            font-weight: 800;
+            margin-bottom: 48px;
+            text-align: center;
+        }
+
+        /* FEATURES */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 24px;
+        }
+
+        .feature {
+            background: rgba(0,217,255,0.08);
+            border: 1px solid rgba(0,217,255,0.2);
+            border-radius: 12px;
+            padding: 32px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .feature:hover {
+            border-color: var(--primary);
+            background: rgba(0,217,255,0.12);
+            transform: translateY(-4px);
+        }
+
+        .feature-icon {
+            font-size: 40px;
+            margin-bottom: 12px;
+        }
+
+        .feature h3 {
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+
+        .feature p {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        /* PRICING */
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            margin-top: 48px;
+        }
+
+        .pricing-card {
+            background: rgba(15,31,46,0.6);
+            border: 1px solid rgba(0,217,255,0.15);
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .pricing-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-4px);
+        }
+
+        .pricing-card.featured {
+            border: 2px solid var(--primary);
+            background: rgba(0,217,255,0.1);
+            transform: scale(1.05);
+        }
+
+        .badge {
+            display: inline-block;
+            background: var(--primary);
+            color: var(--dark);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 800;
+            margin-bottom: 16px;
+        }
+
+        .price {
+            font-size: 48px;
+            font-weight: 800;
+            margin: 20px 0;
+            color: var(--primary);
+        }
+
+        .price-period {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .pricing-features {
+            list-style: none;
+            margin: 24px 0;
+            text-align: left;
+        }
+
+        .pricing-features li {
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(0,217,255,0.1);
+            font-size: 13px;
+        }
+
+        .pricing-features li:before {
+            content: '✓ ';
+            color: var(--primary);
+            margin-right: 8px;
+            font-weight: 700;
+        }
+
+        /* WAITLIST */
+        .waitlist-section {
+            background: rgba(0,217,255,0.08);
+            border: 1px solid rgba(0,217,255,0.2);
+            border-radius: 12px;
+            padding: 48px;
+            text-align: center;
+            margin: 80px 0;
+        }
+
+        .waitlist-section h2 {
+            margin-bottom: 16px;
+        }
+
+        .waitlist-form {
+            display: flex;
+            gap: 12px;
+            max-width: 500px;
+            margin: 32px auto;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .waitlist-form input {
+            padding: 12px 16px;
+            border-radius: 8px;
+            border: 1px solid rgba(0,217,255,0.2);
+            background: rgba(255,255,255,0.05);
+            color: var(--text);
+            flex: 1;
+            min-width: 200px;
+            font-size: 14px;
+        }
+
+        .waitlist-form input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .waitlist-form .btn {
+            min-width: 150px;
+        }
+
+        /* FAQ */
+        .faq-section {
+            max-width: 800px;
+            margin: 80px auto;
+        }
+
+        .faq-item {
+            background: rgba(15,31,46,0.6);
+            border: 1px solid rgba(0,217,255,0.15);
+            border-radius: 8px;
+            margin-bottom: 16px;
+            overflow: hidden;
+        }
+
+        .faq-question {
+            padding: 20px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .faq-question:hover {
+            background: rgba(0,217,255,0.05);
+        }
+
+        .faq-toggle {
+            color: var(--primary);
+            font-size: 20px;
+        }
+
+        .faq-answer {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s;
+            background: rgba(0,217,255,0.05);
+        }
+
+        .faq-answer.open {
+            max-height: 300px;
+            padding: 0 20px 20px;
+        }
+
+        .faq-answer p {
+            color: var(--text-muted);
+            font-size: 14px;
+            font-weight: 400;
+        }
+
+        /* FOOTER */
+        footer {
+            border-top: 1px solid rgba(0,217,255,0.1);
+            padding: 40px 0;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        .footer-content {
+            display: flex;
+            justify-content: center;
+            gap: 32px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .footer-content a {
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .footer-content a:hover {
+            color: var(--primary);
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 32px; }
+            .cta-buttons { flex-direction: column; }
+            .btn { width: 100%; }
+            .pricing-card.featured { transform: scale(1); }
+            .nav-links { display: none; }
         }
     </style>
 </head>
-
 <body>
+    <div class="container">
+        <!-- NAV -->
+        <nav>
+            <div class="logo">
+                <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="50" cy="50" r="48" fill="#0a1628"/>
+                    <ellipse cx="50" cy="35" rx="18" ry="22" fill="#FFD700"/>
+                    <circle cx="40" cy="28" r="7" fill="#FFD700"/><circle cx="40" cy="28" r="4" fill="#1a1a1a"/><circle cx="40" cy="28" r="2" fill="#ffffff" opacity="0.8"/>
+                    <circle cx="60" cy="28" r="7" fill="#FFD700"/><circle cx="60" cy="28" r="4" fill="#1a1a1a"/><circle cx="60" cy="28" r="2" fill="#ffffff" opacity="0.8"/>
+                    <polygon points="50,40 46,45 54,45" fill="#FFD700"/>
+                    <path d="M 45 48 Q 50 51 55 48" stroke="#FFD700" stroke-width="2" fill="none" stroke-linecap="round"/>
+                    <rect x="38" y="56" width="24" height="26" rx="3" fill="#FFD700"/>
+                    <rect x="25" y="62" width="10" height="16" rx="5" fill="#FFD700"/><circle cx="30" cy="80" r="5" fill="#FFD700"/>
+                    <rect x="65" y="62" width="10" height="16" rx="5" fill="#FFD700"/><circle cx="70" cy="80" r="5" fill="#FFD700"/>
+                    <line x1="42" y1="15" x2="38" y2="8" stroke="#FFD700" stroke-width="2" stroke-linecap="round"/><circle cx="38" cy="6" r="2" fill="#FFD700"/>
+                    <line x1="58" y1="15" x2="62" y2="8" stroke="#FFD700" stroke-width="2" stroke-linecap="round"/><circle cx="62" cy="6" r="2" fill="#FFD700"/>
+                </svg>
+                BENERGY
+            </div>
+            <ul class="nav-links">
+                <li><a onclick="scrollToFeatures()">Features</a></li>
+                <li><a onclick="scrollToPricing()">Pricing</a></li>
+                <li><a onclick="goToDashboard()">Dashboard</a></li>
+            </ul>
+        </nav>
 
-<div class="container">
-    <h1>
-        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style="width: 50px; height: 50px; display: inline-block;">
-            <circle cx="50" cy="50" r="48" fill="#0b1220"/>
-            <ellipse cx="50" cy="35" rx="18" ry="22" fill="#FFD700"/>
-            <circle cx="40" cy="28" r="7" fill="#FFD700"/><circle cx="40" cy="28" r="4" fill="#1a1a1a"/><circle cx="40" cy="28" r="2" fill="#ffffff" opacity="0.8"/>
-            <circle cx="60" cy="28" r="7" fill="#FFD700"/><circle cx="60" cy="28" r="4" fill="#1a1a1a"/><circle cx="60" cy="28" r="2" fill="#ffffff" opacity="0.8"/>
-            <polygon points="50,40 46,45 54,45" fill="#FFD700"/>
-            <path d="M 45 48 Q 50 51 55 48" stroke="#FFD700" stroke-width="2" fill="none" stroke-linecap="round"/>
-            <rect x="38" y="56" width="24" height="26" rx="3" fill="#FFD700"/>
-            <rect x="25" y="62" width="10" height="16" rx="5" fill="#FFD700"/><circle cx="30" cy="80" r="5" fill="#FFD700"/>
-            <rect x="65" y="62" width="10" height="16" rx="5" fill="#FFD700"/><circle cx="70" cy="80" r="5" fill="#FFD700"/>
-            <line x1="42" y1="15" x2="38" y2="8" stroke="#FFD700" stroke-width="2" stroke-linecap="round"/><circle cx="38" cy="6" r="2" fill="#FFD700"/>
-            <line x1="58" y1="15" x2="62" y2="8" stroke="#FFD700" stroke-width="2" stroke-linecap="round"/><circle cx="62" cy="6" r="2" fill="#FFD700"/>
-        </svg>
-        Benergy
-    </h1>
-    <p class="subtitle">Real-time GPU monitoring & optimization</p>
+        <!-- HERO -->
+        <section class="hero">
+            <div class="launch-badge">🚀 Launching July 1, 2026</div>
+            <h1>Stop <span class="highlight">wasting GPU compute</span></h1>
+            <p>Real-time GPU monitoring for AI teams. See your waste. Fix it. Save money.</p>
+            <div class="cta-buttons">
+                <button class="btn btn-primary" onclick="joinWaitlist()">🎯 Join Waitlist</button>
+                <button class="btn btn-secondary" onclick="startTrial()">📊 Try Free 14 Days</button>
+            </div>
+        </section>
 
-    <div class="status" id="apiStatus">
-        🔴 API Status: Checking...
-    </div>
-
-    <!-- API Key Section -->
-    <div class="api-key-section">
-        <label for="apiKey">API Key (optional for public endpoints)</label>
-        <input 
-            type="password" 
-            id="apiKey" 
-            placeholder="Paste your API key here for authenticated endpoints"
-        >
-    </div>
-
-    <!-- Public Endpoints -->
-    <div>
-        <h3 style="color: #94a3b8; margin: 30px 0 20px; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;">
-            Public Endpoints
-        </h3>
-        <div class="buttons">
-            <button onclick="checkHealth()">🏥 Health Check</button>
-            <button onclick="createUser()">👤 Create User</button>
-            <button onclick="getMetrics()">📊 Metrics</button>
-            <button onclick="getDashboard()">📈 Dashboard</button>
+        <!-- STATS -->
+        <div class="stats-section">
+            <div class="stat">
+                <div class="stat-number">30-40%</div>
+                <div class="stat-label">Avg GPU waste</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number">$1.2k</div>
+                <div class="stat-label">Monthly savings (avg)</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number">5 min</div>
+                <div class="stat-label">Time to setup</div>
+            </div>
         </div>
+
+        <!-- FEATURES -->
+        <section class="section" id="features">
+            <h2>Built for Your Team</h2>
+            <div class="features-grid">
+                <div class="feature">
+                    <span class="feature-icon">📊</span>
+                    <h3>Real-Time Dashboard</h3>
+                    <p>See GPU utilization, idle time, and job performance in one glance.</p>
+                </div>
+                <div class="feature">
+                    <span class="feature-icon">⚠️</span>
+                    <h3>Smart Alerts</h3>
+                    <p>Get notified when GPUs are underused or inefficient.</p>
+                </div>
+                <div class="feature">
+                    <span class="feature-icon">💡</span>
+                    <h3>Actionable Insights</h3>
+                    <p>Batch jobs, shift to off-peak, save on costs.</p>
+                </div>
+                <div class="feature">
+                    <span class="feature-icon">🔌</span>
+                    <h3>Easy Integration</h3>
+                    <p>Works with AWS, GCP, Lambda. 5 min setup.</p>
+                </div>
+                <div class="feature">
+                    <span class="feature-icon">🛡️</span>
+                    <h3>Privacy First</h3>
+                    <p>Your data stays yours. We only track compute metrics.</p>
+                </div>
+                <div class="feature">
+                    <span class="feature-icon">🚀</span>
+                    <h3>Save 30-40%</h3>
+                    <p>Optimize batching, scheduling, and allocation.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- PRICING -->
+        <section class="section" id="pricing">
+            <h2>Simple Pricing</h2>
+            <p style="text-align: center; color: var(--text-muted); margin-bottom: 48px;">All plans include 14-day free trial. No credit card required.</p>
+            <div class="pricing-grid">
+                <div class="pricing-card">
+                    <h3>Solo</h3>
+                    <div class="price">$19<span class="price-period">/mo</span></div>
+                    <ul class="pricing-features">
+                        <li>1-3 GPUs</li>
+                        <li>Real-time dashboard</li>
+                        <li>Basic alerts</li>
+                        <li>7-day history</li>
+                    </ul>
+                    <button class="btn btn-secondary" style="width:100%;" onclick="startTrial()">Try Free 14 Days</button>
+                </div>
+
+                <div class="pricing-card featured">
+                    <div class="badge">MOST POPULAR</div>
+                    <h3>Team</h3>
+                    <div class="price">$99<span class="price-period">/mo</span></div>
+                    <ul class="pricing-features">
+                        <li>Up to 20 GPUs</li>
+                        <li>Multi-GPU insights</li>
+                        <li>Smart recommendations</li>
+                        <li>90-day history</li>
+                        <li>Slack integration</li>
+                    </ul>
+                    <button class="btn btn-primary" style="width:100%;" onclick="startTrial()">Try Free 14 Days</button>
+                </div>
+
+                <div class="pricing-card">
+                    <h3>Enterprise</h3>
+                    <div class="price">Custom</div>
+                    <ul class="pricing-features">
+                        <li>Unlimited GPUs</li>
+                        <li>Advanced analytics</li>
+                        <li>Custom integrations</li>
+                        <li>Unlimited history</li>
+                        <li>Dedicated support</li>
+                    </ul>
+                    <button class="btn btn-secondary" style="width:100%;" onclick="contactSales()">Contact Sales</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- WAITLIST -->
+        <section class="waitlist-section">
+            <h2>Early Access</h2>
+            <p style="color: var(--text-muted);">Join 500+ waiting for July 1st launch. Get $50 credit on first month.</p>
+            <div class="waitlist-form">
+                <input type="email" placeholder="your@email.com" id="waitlistEmail">
+                <button class="btn btn-primary" onclick="addToWaitlist()">Notify Me</button>
+            </div>
+        </section>
+
+        <!-- FAQ -->
+        <section class="section">
+            <h2>FAQ</h2>
+            <div class="faq-section">
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <span>How do you collect GPU metrics?</span>
+                        <span class="faq-toggle">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Our lightweight agent runs on your GPU node and reports metrics via HTTPS every 60 seconds. No code access, full privacy.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <span>Is my data encrypted?</span>
+                        <span class="faq-toggle">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Yes. All data encrypted in transit (HTTPS) and at rest (AES-256). You can self-host the agent if you prefer.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <span>Can I cancel anytime?</span>
+                        <span class="faq-toggle">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Yes. Month-to-month only. Cancel anytime, no lock-in contracts.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <span>Do you offer annual discounts?</span>
+                        <span class="faq-toggle">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Yes. Save 20% with annual billing. $228/year for Solo, $1,188/year for Team.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- FOOTER -->
+        <footer>
+            <div class="footer-content">
+                <a href="#">Privacy Policy</a>
+                <a href="#">Terms of Service</a>
+                <a href="mailto:hello@benergy.io">Contact</a>
+            </div>
+            <p>&copy; 2026 Benergy — GPU observability for AI teams.</p>
+        </footer>
     </div>
 
-    <!-- Authenticated Endpoints -->
-    <div>
-        <h3 style="color: #94a3b8; margin: 30px 0 20px; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;">
-            Authenticated Endpoints (needs API key)
-        </h3>
-        <div class="buttons">
-            <button onclick="getHistory()">📜 History</button>
-            <button onclick="getInsights()">💡 Insights</button>
-            <button onclick="getAlerts()">⚠️ Alerts</button>
-        </div>
-    </div>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
 
-    <!-- Waitlist & Contact -->
-    <div>
-        <h3 style="color: #94a3b8; margin: 30px 0 20px; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;">
-            Engagement
-        </h3>
-        <div class="buttons">
-            <button onclick="joinWaitlist()">📧 Join Waitlist</button>
-            <button onclick="contactForm()">💬 Contact Us</button>
-        </div>
-    </div>
+            const API_BASE = "https://benergy-oi.onrender.com";
+            const DASHBOARD_URL = "https://benergy-oi.onrender.com/dashboard";
 
-    <!-- Output -->
-    <div class="card" id="output">
-        <pre>Click a button to load data...</pre>
-    </div>
-</div>
-
-<script>
-    document.addEventListener("DOMContentLoaded", function() {
-        const BASE_URL = "https://benergy-oi.onrender.com";
-
-        // Check API status on load
-        checkApiStatus();
-
-        // Auto-check API status every 30 seconds
-        setInterval(checkApiStatus, 30000);
-
-        async function checkApiStatus() {
-            try {
-                const res = await fetch(BASE_URL + "/health", { method: "GET" });
-                if (res.ok) {
-                    document.getElementById("apiStatus").innerHTML = "🟢 API Status: Online";
-                    document.getElementById("apiStatus").style.borderColor = "#22c55e";
-                    document.getElementById("apiStatus").style.background = "rgba(34, 197, 94, 0.1)";
-                    document.getElementById("apiStatus").style.color = "#22c55e";
-                } else {
-                    document.getElementById("apiStatus").innerHTML = "🔴 API Status: Error";
-                }
-            } catch (err) {
-                document.getElementById("apiStatus").innerHTML = "🔴 API Status: Offline";
+            function scrollToFeatures() {
+                document.getElementById('features')
+                    ?.scrollIntoView({ behavior: 'smooth' });
             }
-        }
 
-        async function makeRequest(endpoint, method = "GET", body = null, needsAuth = false) {
-            const BASE_URL = "https://benergy-oi.onrender.com";
-            
-            try {
-                document.getElementById("output").innerHTML = "<pre class='loading'>Loading...</pre>";
+            function scrollToPricing() {
+                document.getElementById('pricing')
+                    ?.scrollIntoView({ behavior: 'smooth' });
+            }
 
-                const headers = { "Content-Type": "application/json" };
+            function goToDashboard() {
+                window.location.href = DASHBOARD_URL;
+            }
 
-                if (needsAuth) {
-                    const apiKey = document.getElementById("apiKey")?.value;
-                    if (!apiKey) {
-                        showError("API key required for this endpoint. Please paste your key above.");
-                        return;
-                    }
-                    headers["x-api-key"] = apiKey;
-                }
+            function joinWaitlist() {
+                const email = prompt("Enter your email:");
+                if (email) addToWaitlist(email);
+            }
 
-                const options = { method, headers };
-                if (body) options.body = JSON.stringify(body);
+            async function addToWaitlist(emailFromInput) {
+                const email = emailFromInput ||
+                    document.getElementById("waitlistEmail")?.value;
 
-                const res = await fetch(BASE_URL + endpoint, options);
-                const data = await res.json();
-
-                if (!res.ok) {
-                    showError(`Error: ${data.error || data.message || "Request failed"}`);
+                if (!email) {
+                    alert("Please enter your email");
                     return;
                 }
 
-                document.getElementById("output").innerHTML =
-                    "<pre>" + JSON.stringify(data, null, 2) + "</pre>";
+                try {
+                    const res = await fetch(`${API_BASE}/waitlist`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ email })
+                    });
 
-            } catch (err) {
-                showError(`Network Error: ${err.message}`);
+                    if (!res.ok) throw new Error("Request failed");
+
+                    alert("✅ You're on the waitlist!");
+                    
+                    const input = document.getElementById("waitlistEmail");
+                    if (input) input.value = "";
+
+                } catch (err) {
+                    console.error(err);
+                    alert("⚠️ Failed to join waitlist. Try again later.");
+                }
             }
-        }
 
-        function showError(message) {
-            document.getElementById("output").innerHTML =
-                `<div class="error">❌ ${message}</div>`;
-        }
-
-        function showSuccess(message) {
-            document.getElementById("output").innerHTML =
-                `<div class="success">✅ ${message}</div>`;
-        }
-
-        // Public endpoints
-        window.checkHealth = () => makeRequest("/health");
-        window.createUser = () => makeRequest("/create-user");
-        window.getMetrics = () => makeRequest("/metrics");
-        window.getDashboard = () => makeRequest("/dashboard");
-
-        // Authenticated endpoints
-        window.getHistory = () => makeRequest("/history", "GET", null, true);
-        window.getInsights = () => makeRequest("/insights", "GET", null, true);
-        window.getAlerts = () => makeRequest("/alerts", "GET", null, true);
-
-        // Form endpoints
-        window.joinWaitlist = async () => {
-            const email = prompt("Enter your email:");
-            if (email) {
-                makeRequest("/waitlist", "POST", { email });
+            function startTrial() {
+                alert("🚀 Trial coming soon (launch July 1st)");
             }
-        };
 
-        window.contactForm = async () => {
-            const name = prompt("Your name:");
-            if (!name) return;
-            
-            const email = prompt("Your email:");
-            if (!email) return;
-            
-            const company = prompt("Your company (optional):");
-            
-            makeRequest("/contact", "POST", { name, email, company });
-        };
-    });
-</script>
+            function contactSales() {
+                const name = prompt("Name:");
+                const email = prompt("Email:");
+                const company = prompt("Company:");
 
+                if (!email) return;
+
+                fetch(`${API_BASE}/contact`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name, email, company })
+                }).catch(console.error);
+
+                alert("✅ Sales will contact you soon.");
+            }
+
+            // FAQ toggle (safe bind)
+            document.querySelectorAll(".faq-question").forEach(q => {
+                q.addEventListener("click", function () {
+                    const answer = this.nextElementSibling;
+                    const toggle = this.querySelector(".faq-toggle");
+
+                    if (!answer || !toggle) return;
+
+                    answer.classList.toggle("open");
+                    toggle.textContent = answer.classList.contains("open") ? "−" : "+";
+                });
+            });
+
+            // expose functions globally
+            window.scrollToFeatures = scrollToFeatures;
+            window.scrollToPricing = scrollToPricing;
+            window.goToDashboard = goToDashboard;
+            window.joinWaitlist = joinWaitlist;
+            window.addToWaitlist = addToWaitlist;
+            window.startTrial = startTrial;
+            window.contactSales = contactSales;
+
+        });
+    </script>
 </body>
 </html>
