@@ -1,14 +1,15 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 import subprocess
 import random
 import time
 import uuid
 import sqlite3
 import os
-from datetime import datetime
 
-print("🚀 BENERGY API v4.0 - PRODUCTION WITH REAL GPU DATA")
+print("🚀 BENERGY API v4.0 - WITH STATIC FILES")
 
 app = FastAPI(title="Benergy", version="4.0")
 
@@ -19,6 +20,12 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# ================= STATIC FILES =================
+
+if os.path.exists("static"):
+    app.mount("/static", StaticFiles(directory="static"), name="static")
+    print("✅ Static files mounted")
 
 # ================= CONFIG =================
 
@@ -32,9 +39,6 @@ GPU_PRICING = {
 }
 GPU_TYPE = "A100"
 start_time = time.time()
-
-print(f"✅ GPU Type: {GPU_TYPE}")
-print(f"✅ Pricing: ${GPU_PRICING[GPU_TYPE]}/hour")
 
 # ================= DATABASE =================
 
@@ -73,7 +77,6 @@ def init_db():
 
     conn.commit()
     conn.close()
-    print("✅ Database initialized")
 
 init_db()
 
@@ -89,33 +92,26 @@ def get_real_gpu_metrics():
         result = subprocess.check_output(query, shell=True, timeout=5).decode().strip()
         util, mem, temp = result.split(",")
 
-        metrics = {
+        return {
             "gpu_utilization": int(float(util)),
             "memory_used": int(float(mem)),
             "temperature": int(float(temp))
         }
-
-        print(f"✅ Real GPU: {metrics['gpu_utilization']}% util, {metrics['memory_used']}MB, {metrics['temperature']}°C")
-        return metrics
-
-    except Exception as e:
-        print(f"⚠️ No real GPU available: {str(e)}")
+    except:
         return None
 
 def get_mock_gpu_metrics():
-    """Get mock GPU metrics (when no real GPU)"""
-    metrics = {
+    """Get mock GPU metrics"""
+    return {
         "gpu_utilization": random.randint(15, 85),
         "memory_used": random.randint(512, 8192),
         "temperature": random.randint(35, 75)
     }
-    print(f"📊 Mock GPU: {metrics['gpu_utilization']}% util, {metrics['memory_used']}MB, {metrics['temperature']}°C")
-    return metrics
 
 def get_gpu_metrics():
     """Get GPU metrics (real or mock)"""
-    real_metrics = get_real_gpu_metrics()
-    return real_metrics if real_metrics else get_mock_gpu_metrics()
+    real = get_real_gpu_metrics()
+    return real if real else get_mock_gpu_metrics()
 
 def calculate_cost():
     """Calculate running cost"""
@@ -126,7 +122,6 @@ def save_metrics(gpu):
     """Save metrics to database"""
     conn = sqlite3.connect(DB_NAME)
     c = conn.cursor()
-
     try:
         c.execute("""
         INSERT INTO metrics (timestamp, gpu_utilization, memory_used, temperature, cost)
@@ -139,8 +134,8 @@ def save_metrics(gpu):
             calculate_cost()
         ))
         conn.commit()
-    except Exception as e:
-        print(f"⚠️ DB error: {str(e)}")
+    except:
+        pass
     finally:
         conn.close()
 
@@ -155,10 +150,11 @@ def root():
         "gpu_type": GPU_TYPE,
         "endpoints": {
             "health": "/health",
-            "metrics": "/metrics (real GPU data)",
+            "metrics": "/metrics",
             "history": "/history",
             "insights": "/insights",
             "dashboard": "/dashboard",
+            "dashboard_data": "/dashboard-data",
             "create_user": "/create-user",
             "waitlist": "/waitlist (POST)",
             "contact": "/contact (POST)"
@@ -169,16 +165,14 @@ def root():
 @app.get("/health")
 def health():
     """Health check"""
-    return {"status": "✅ ok", "service": "benergy-api"}
+    return {"status": "✅ ok"}
 
 
 @app.get("/metrics")
 def metrics():
-    """Get current GPU metrics (REAL DATA)"""
+    """Get current GPU metrics"""
     gpu = get_gpu_metrics()
     cost = calculate_cost()
-
-    # Save to database
     save_metrics(gpu)
 
     return {
@@ -242,7 +236,6 @@ def insights():
             "recommendation": "Stop idle workloads - GPUs are barely used",
             "potential_savings": "Up to 80%"
         }
-
     elif util < 50:
         return {
             "status": "⚠️ CAUTION",
@@ -261,9 +254,18 @@ def insights():
     }
 
 
-@app.get("/dashboard")
+@app.get("/dashboard", response_class=FileResponse)
 def dashboard():
-    """Dashboard data endpoint"""
+    """Serve dashboard HTML"""
+    try:
+        return FileResponse("static/dashboard.html", media_type="text/html")
+    except:
+        return {"error": "Dashboard not found"}
+
+
+@app.get("/dashboard-data")
+def dashboard_data():
+    """Get dashboard data as JSON"""
     conn = sqlite3.connect(DB_NAME)
     c = conn.cursor()
 
@@ -295,7 +297,7 @@ def dashboard():
             "avg_utilization": round(avg_util, 2),
             "idle_percentage": round(idle_pct, 2),
             "peak_utilization": round(peak_util, 2),
-            "estimated_monthly_cost": round(total_cost * 720, 2),  # 720 hours/month
+            "estimated_monthly_cost": round(total_cost * 720, 2),
             "recommendations": [
                 "⚠️ GPUs underutilized. Batch smaller jobs." if avg_util < 30 else "✅ GPUs running efficiently",
                 "💡 Schedule heavy training during off-peak." if avg_util < 50 else "⚠️ High GPU utilization",
@@ -320,15 +322,11 @@ def create_user(email: str = "user@example.com"):
             "INSERT INTO users VALUES (?, ?, ?, ?)",
             (user_id, api_key, email, int(time.time()))
         )
-
         c.execute(
             "INSERT INTO subscriptions VALUES (?, 'free', ?)",
             (user_id, int(time.time()))
         )
-
         conn.commit()
-
-        print(f"✅ User created: {user_id}")
 
         return {
             "status": "✅ success",
@@ -338,7 +336,6 @@ def create_user(email: str = "user@example.com"):
             "plan": "free"
         }
     except Exception as e:
-        print(f"❌ User creation error: {str(e)}")
         return {"error": str(e)}
     finally:
         conn.close()
@@ -351,8 +348,6 @@ async def waitlist(data: dict):
 
     if not email:
         return {"error": "Email required"}
-
-    print(f"📧 WAITLIST: {email}")
 
     return {
         "status": "✅ success",
@@ -371,8 +366,6 @@ async def contact(data: dict):
     if not email:
         return {"error": "Email required"}
 
-    print(f"📧 CONTACT: {name} <{email}> from {company}")
-
     return {
         "status": "✅ success",
         "message": "We'll contact you soon",
@@ -386,5 +379,5 @@ async def contact(data: dict):
 
 if __name__ == "__main__":
     import uvicorn
-    print("\n✅ Starting Benergy API v4.0 with REAL GPU monitoring...\n")
+    print("\n✅ Starting Benergy API v4.0...\n")
     uvicorn.run(app, host="0.0.0.0", port=8000)
