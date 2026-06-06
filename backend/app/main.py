@@ -9,7 +9,7 @@ import uuid
 import sqlite3
 import os
 
-print("🚀 BENERGY API v4.0 - WITH STATIC FILES")
+print("🚀 BENERGY API v4.0 - FIXED DASHBOARD")
 
 app = FastAPI(title="Benergy", version="4.0")
 
@@ -23,9 +23,13 @@ app.add_middleware(
 
 # ================= STATIC FILES =================
 
-if os.path.exists("static"):
-    app.mount("/static", StaticFiles(directory="static"), name="static")
-    print("✅ Static files mounted")
+# Mount static folder if it exists
+static_path = "app/static"
+if os.path.exists(static_path):
+    app.mount("/static", StaticFiles(directory=static_path), name="static")
+    print(f"✅ Static files mounted from {static_path}")
+else:
+    print(f"⚠️ Static folder not found at {static_path}")
 
 # ================= CONFIG =================
 
@@ -257,10 +261,14 @@ def insights():
 @app.get("/dashboard", response_class=FileResponse)
 def dashboard():
     """Serve dashboard HTML"""
+    dashboard_path = "app/static/dashboard.html"
     try:
-        return FileResponse("static/dashboard.html", media_type="text/html")
-    except:
-        return {"error": "Dashboard not found"}
+        if not os.path.exists(dashboard_path):
+            return {"error": f"Dashboard not found at {dashboard_path}"}
+        return FileResponse(dashboard_path, media_type="text/html")
+    except Exception as e:
+        print(f"❌ Dashboard error: {str(e)}")
+        return {"error": f"Failed to load dashboard: {str(e)}"}
 
 
 @app.get("/dashboard-data")
@@ -299,9 +307,9 @@ def dashboard_data():
             "peak_utilization": round(peak_util, 2),
             "estimated_monthly_cost": round(total_cost * 720, 2),
             "recommendations": [
-                "⚠️ GPUs underutilized. Batch smaller jobs." if avg_util < 30 else "✅ GPUs running efficiently",
+                "✅ GPUs running efficiently" if avg_util >= 50 else "⚠️ GPUs underutilized. Batch smaller jobs.",
                 "💡 Schedule heavy training during off-peak." if avg_util < 50 else "⚠️ High GPU utilization",
-                "💤 Check idle GPUs." if avg_util < 20 else "✅ System optimal"
+                "✅ System optimal" if avg_util >= 30 else "💤 Check idle GPUs."
             ]
         }
     finally:
