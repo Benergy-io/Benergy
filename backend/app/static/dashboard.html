@@ -53,9 +53,17 @@
         }
 
         .logo {
-            font-size: 26px;
+            font-size: 20px;
             font-weight: 800;
             color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo svg {
+            width: 36px;
+            height: 36px;
         }
 
         .btn {
@@ -66,6 +74,7 @@
             font-weight: 600;
             text-decoration: none;
             transition: 0.3s;
+            font-size: 14px;
         }
 
         .btn-primary {
@@ -73,10 +82,20 @@
             color: #0a1628;
         }
 
+        .btn-primary:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+
         .btn-secondary {
             background: transparent;
             border: 1px solid var(--primary);
             color: var(--primary);
+            margin-right: 10px;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(0,217,255,0.1);
         }
 
         .hero {
@@ -104,12 +123,20 @@
             border: 1px solid rgba(0,217,255,0.15);
             padding: 20px;
             border-radius: 14px;
+            transition: all 0.3s;
+        }
+
+        .card:hover {
+            border-color: var(--primary);
+            background: rgba(15,31,46,0.9);
         }
 
         .card h3 {
             font-size: 13px;
             color: var(--text-muted);
             margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .value {
@@ -122,6 +149,12 @@
             margin-top: 40px;
         }
 
+        .section h2 {
+            font-size: 24px;
+            margin-bottom: 16px;
+            color: var(--text);
+        }
+
         .panel {
             background: rgba(15,31,46,0.7);
             border: 1px solid rgba(0,217,255,0.15);
@@ -132,17 +165,64 @@
         canvas {
             width: 100%;
             height: 250px;
+            max-height: 250px;
         }
 
         pre {
             color: #cbd5e1;
             font-size: 13px;
             white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 300px;
+            overflow-y: auto;
+            line-height: 1.5;
         }
 
         .status {
             font-size: 14px;
             color: var(--text-muted);
+        }
+
+        .status.online {
+            color: #22c55e;
+        }
+
+        .status.offline {
+            color: #f87171;
+        }
+
+        .error-box {
+            background: rgba(244, 63, 94, 0.1);
+            border: 1px solid #f87171;
+            color: #fca5a5;
+            padding: 16px;
+            border-radius: 8px;
+            margin: 16px 0;
+        }
+
+        .loading {
+            color: var(--primary);
+            font-style: italic;
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 32px;
+            }
+
+            .grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            nav {
+                flex-direction: column;
+                gap: 16px;
+            }
+
+            .btn {
+                padding: 10px 14px;
+                font-size: 12px;
+            }
         }
     </style>
 </head>
@@ -155,10 +235,25 @@
 
     <!-- NAV -->
     <nav>
-        <div class="logo">BENERGY</div>
+        <div class="logo">
+            <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="50" cy="50" r="48" fill="#0a1628"/>
+                <ellipse cx="50" cy="35" rx="18" ry="22" fill="#FFD700"/>
+                <circle cx="40" cy="28" r="7" fill="#FFD700"/><circle cx="40" cy="28" r="4" fill="#1a1a1a"/><circle cx="40" cy="28" r="2" fill="#ffffff" opacity="0.8"/>
+                <circle cx="60" cy="28" r="7" fill="#FFD700"/><circle cx="60" cy="28" r="4" fill="#1a1a1a"/><circle cx="60" cy="28" r="2" fill="#ffffff" opacity="0.8"/>
+                <polygon points="50,40 46,45 54,45" fill="#FFD700"/>
+                <path d="M 45 48 Q 50 51 55 48" stroke="#FFD700" stroke-width="2" fill="none" stroke-linecap="round"/>
+                <rect x="38" y="56" width="24" height="26" rx="3" fill="#FFD700"/>
+                <rect x="25" y="62" width="10" height="16" rx="5" fill="#FFD700"/><circle cx="30" cy="80" r="5" fill="#FFD700"/>
+                <rect x="65" y="62" width="10" height="16" rx="5" fill="#FFD700"/><circle cx="70" cy="80" r="5" fill="#FFD700"/>
+                <line x1="42" y1="15" x2="38" y2="8" stroke="#FFD700" stroke-width="2" stroke-linecap="round"/><circle cx="38" cy="6" r="2" fill="#FFD700"/>
+                <line x1="58" y1="15" x2="62" y2="8" stroke="#FFD700" stroke-width="2" stroke-linecap="round"/><circle cx="62" cy="6" r="2" fill="#FFD700"/>
+            </svg>
+            BENERGY
+        </div>
         <div>
-            <a href="/" class="btn btn-secondary">← Home</a>
-            <button onclick="refreshAll()" class="btn btn-primary">Refresh</button>
+            <a href="https://benergy-io.github.io/" class="btn btn-secondary">← Home</a>
+            <button onclick="refreshAll()" class="btn btn-primary">🔄 Refresh</button>
         </div>
     </nav>
 
@@ -187,7 +282,7 @@
 
         <div class="card">
             <h3>Status</h3>
-            <div class="value status" id="status">LIVE</div>
+            <div class="value status offline" id="status">CHECKING...</div>
         </div>
     </div>
 
@@ -203,7 +298,7 @@
     <div class="section">
         <h2>Insights</h2>
         <div class="panel">
-            <pre id="insights">Loading...</pre>
+            <pre id="insights" class="loading">Loading insights...</pre>
         </div>
     </div>
 
@@ -211,7 +306,7 @@
     <div class="section">
         <h2>History</h2>
         <div class="panel">
-            <pre id="history">Loading...</pre>
+            <pre id="history" class="loading">Loading history...</pre>
         </div>
     </div>
 
@@ -219,14 +314,16 @@
 
 <script>
 
-const BASE_URL =
-"https://effective-meme-p7rx79xqqx4rhrgq6-8001.app.github.dev";
+const BASE_URL = "https://benergy-oi.onrender.com";
 
 let historyData = [];
 
 async function loadMetrics() {
     try {
         const res = await fetch(BASE_URL + "/metrics");
+        
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        
         const data = await res.json();
 
         document.getElementById("gpu-util").innerText =
@@ -238,48 +335,78 @@ async function loadMetrics() {
         document.getElementById("gpu-temp").innerText =
             data.temperature + "°C";
 
+        document.getElementById("status").innerText = "ONLINE";
+        document.getElementById("status").className = "value status online";
+
     } catch (e) {
+        console.error("Metrics error:", e);
         document.getElementById("status").innerText = "OFFLINE";
+        document.getElementById("status").className = "value status offline";
+        document.getElementById("gpu-util").innerText = "--";
+        document.getElementById("gpu-memory").innerText = "--";
+        document.getElementById("gpu-temp").innerText = "--";
     }
 }
 
 async function loadHistory() {
     try {
         const res = await fetch(BASE_URL + "/history");
+        
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        
         const data = await res.json();
 
-        historyData = data.slice(-30);
+        // Handle different response formats
+        let historyArray = data.data || data || [];
+        
+        if (historyArray && Array.isArray(historyArray)) {
+            historyData = historyArray.slice(-30);
+        }
+        
         drawChart();
 
         document.getElementById("history").innerText =
             JSON.stringify(data, null, 2);
 
     } catch (e) {
-        console.log("history error");
+        console.error("History error:", e);
+        document.getElementById("history").innerText =
+            `❌ Failed to load history: ${e.message}`;
     }
 }
 
 async function loadInsights() {
     try {
         const res = await fetch(BASE_URL + "/insights");
+        
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        
         const data = await res.json();
 
         document.getElementById("insights").innerText =
             JSON.stringify(data, null, 2);
 
     } catch (e) {
+        console.error("Insights error:", e);
         document.getElementById("insights").innerText =
-            "No insights available";
+            `❌ No insights available: ${e.message}`;
     }
 }
 
 function drawChart() {
     const canvas = document.getElementById("chart");
+    if (!canvas) return;
+    
     const ctx = canvas.getContext("2d");
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    if (!historyData.length) return;
+    if (!historyData || !historyData.length) {
+        ctx.fillStyle = var(--text-muted);
+        ctx.font = "14px sans-serif";
+        ctx.fillText("No data available", 20, canvas.height / 2);
+        return;
+    }
 
     const step = canvas.width / historyData.length;
 
@@ -289,7 +416,8 @@ function drawChart() {
 
     historyData.forEach((point, i) => {
         const x = i * step;
-        const y = canvas.height - (point.gpu_utilization / 100) * canvas.height;
+        const util = point.gpu_utilization || point[1] || 0;
+        const y = canvas.height - (util / 100) * canvas.height;
 
         if (i === 0) ctx.moveTo(x, y);
         else ctx.lineTo(x, y);
@@ -299,12 +427,17 @@ function drawChart() {
 }
 
 function refreshAll() {
+    console.log("Refreshing all data...");
     loadMetrics();
     loadHistory();
     loadInsights();
 }
 
+// Initial load
+console.log("🚀 Dashboard initializing with API:", BASE_URL);
 refreshAll();
+
+// Auto-refresh every 5 seconds
 setInterval(refreshAll, 5000);
 
 </script>
