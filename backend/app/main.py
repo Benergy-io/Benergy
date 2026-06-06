@@ -261,15 +261,15 @@ def insights():
 @app.get("/dashboard", response_class=FileResponse)
 def dashboard():
     """Serve dashboard HTML"""
-    dashboard_path = "app/static/dashboard.html"
     try:
-        if not os.path.exists(dashboard_path):
-            return {"error": f"Dashboard not found at {dashboard_path}"}
-        return FileResponse(dashboard_path, media_type="text/html")
+        # Read the file and return it
+        with open("app/static/dashboard.html", "r") as f:
+            html_content = f.read()
+        from fastapi.responses import HTMLResponse
+        return HTMLResponse(content=html_content)
     except Exception as e:
         print(f"❌ Dashboard error: {str(e)}")
-        return {"error": f"Failed to load dashboard: {str(e)}"}
-
+        return {"error": f"Dashboard error: {str(e)}"}
 
 @app.get("/dashboard-data")
 def dashboard_data():
