@@ -1,17 +1,18 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 import subprocess
 import random
 import time
 import uuid
 import sqlite3
 import os
+from pydantic import BaseModel
 
-print("🚀 BENERGY API v4.0 - FIXED DASHBOARD")
+print("🚀 BENERGY API v4.1 - WITH AGENT SUPPORT")
 
-app = FastAPI(title="Benergy", version="4.0")
+app = FastAPI(title="Benergy", version="4.1")
 
 app.add_middleware(
     CORSMiddleware,
@@ -23,7 +24,6 @@ app.add_middleware(
 
 # ================= STATIC FILES =================
 
-# Mount static folder if it exists
 static_path = "app/static"
 if os.path.exists(static_path):
     app.mount("/static", StaticFiles(directory=static_path), name="static")
@@ -44,6 +44,16 @@ GPU_PRICING = {
 GPU_TYPE = "A100"
 start_time = time.time()
 
+# ================= PYDANTIC MODELS =================
+
+class MetricsInput(BaseModel):
+    """Metrics from agent"""
+    api_key: str
+    gpu_utilization: int
+    memory_used: int
+    temperature: int
+
+
 # ================= DATABASE =================
 
 def init_db():
@@ -54,6 +64,7 @@ def init_db():
     c.execute("""
     CREATE TABLE IF NOT EXISTS metrics (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id TEXT,
         timestamp INTEGER,
         gpu_utilization INTEGER,
         memory_used INTEGER,
@@ -65,7 +76,7 @@ def init_db():
     c.execute("""
     CREATE TABLE IF NOT EXISTS users (
         user_id TEXT PRIMARY KEY,
-        api_key TEXT,
+        api_key TEXT UNIQUE,
         email TEXT,
         created_at INTEGER
     )
@@ -83,6 +94,24 @@ def init_db():
     conn.close()
 
 init_db()
+
+# ================= AUTH FUNCTIONS =================
+
+def validate_api_key(api_key: str):
+    """
+    Validate API key and return user_id
+    Returns user_id if valid, None if invalid
+    """
+    conn = sqlite3.connect(DB_NAME)
+    c = conn.cursor()
+    
+    try:
+        c.execute("SELECT user_id FROM users WHERE api_key = ?", (api_key,))
+        row = c.fetchone()
+        return row[0] if row else None
+    finally:
+        conn.close()
+
 
 # ================= GPU FUNCTIONS =================
 
@@ -122,15 +151,16 @@ def calculate_cost():
     hours = (time.time() - start_time) / 3600
     return round(hours * GPU_PRICING[GPU_TYPE], 6)
 
-def save_metrics(gpu):
+def save_metrics(user_id: str, gpu):
     """Save metrics to database"""
     conn = sqlite3.connect(DB_NAME)
     c = conn.cursor()
     try:
         c.execute("""
-        INSERT INTO metrics (timestamp, gpu_utilization, memory_used, temperature, cost)
-        VALUES (?, ?, ?, ?, ?)
+        INSERT INTO metrics (user_id, timestamp, gpu_utilization, memory_used, temperature, cost)
+        VALUES (?, ?, ?, ?, ?, ?)
         """, (
+            user_id,
             int(time.time()),
             gpu["gpu_utilization"],
             gpu["memory_used"],
@@ -138,8 +168,8 @@ def save_metrics(gpu):
             calculate_cost()
         ))
         conn.commit()
-    except:
-        pass
+    except Exception as e:
+        print(f"Error saving metrics: {e}")
     finally:
         conn.close()
 
@@ -150,19 +180,14 @@ def root():
     return {
         "message": "👽 Benergy GPU Monitoring API",
         "status": "✅ RUNNING",
-        "version": "4.0",
+        "version": "4.1",
         "gpu_type": GPU_TYPE,
-        "endpoints": {
-            "health": "/health",
-            "metrics": "/metrics",
-            "history": "/history",
-            "insights": "/insights",
-            "dashboard": "/dashboard",
-            "dashboard_data": "/dashboard-data",
-            "create_user": "/create-user",
-            "waitlist": "/waitlist (POST)",
-            "contact": "/contact (POST)"
-        }
+        "features": [
+            "Real-time GPU monitoring",
+            "Agent integration",
+            "API key authentication",
+            "Historical metrics"
+        ]
     }
 
 
@@ -172,12 +197,41 @@ def health():
     return {"status": "✅ ok"}
 
 
+@app.post("/metrics")
+async def post_metrics(data: MetricsInput):
+    """
+    Accept metrics from agent
+    Agent sends: api_key, gpu_utilization, memory_used, temperature
+    """
+    api_key = data.api_key
+    
+    # Validate API key
+    user_id = validate_api_key(api_key)
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Invalid API key")
+    
+    # Store metrics
+    metrics = {
+        "gpu_utilization": data.gpu_utilization,
+        "memory_used": data.memory_used,
+        "temperature": data.temperature
+    }
+    
+    save_metrics(user_id, metrics)
+    
+    return {
+        "status": "✅ success",
+        "message": "Metrics received",
+        "timestamp": int(time.time()),
+        "data": metrics
+    }
+
+
 @app.get("/metrics")
-def metrics():
-    """Get current GPU metrics"""
+def get_metrics():
+    """Get current GPU metrics (for testing without agent)"""
     gpu = get_gpu_metrics()
     cost = calculate_cost()
-    save_metrics(gpu)
 
     return {
         "status": "✅ success",
@@ -191,18 +245,38 @@ def metrics():
 
 
 @app.get("/history")
-def history():
-    """Get metrics history"""
+def history(api_key: str = None):
+    """
+    Get metrics history
+    If api_key provided, return only that user's data
+    Otherwise return demo data
+    """
     conn = sqlite3.connect(DB_NAME)
     c = conn.cursor()
 
     try:
-        c.execute("""
-            SELECT timestamp, gpu_utilization, memory_used, temperature, cost
-            FROM metrics
-            ORDER BY timestamp DESC
-            LIMIT 100
-        """)
+        if api_key:
+            # Validate API key
+            user_id = validate_api_key(api_key)
+            if not user_id:
+                raise HTTPException(status_code=401, detail="Invalid API key")
+            
+            # Get user's metrics
+            c.execute("""
+                SELECT timestamp, gpu_utilization, memory_used, temperature, cost
+                FROM metrics
+                WHERE user_id = ?
+                ORDER BY timestamp DESC
+                LIMIT 100
+            """, (user_id,))
+        else:
+            # Get all metrics for demo
+            c.execute("""
+                SELECT timestamp, gpu_utilization, memory_used, temperature, cost
+                FROM metrics
+                ORDER BY timestamp DESC
+                LIMIT 100
+            """)
 
         rows = c.fetchall()
 
@@ -227,7 +301,7 @@ def history():
 
 
 @app.get("/insights")
-def insights():
+def insights(api_key: str = None):
     """Get AI insights"""
     gpu = get_gpu_metrics()
     util = gpu["gpu_utilization"]
@@ -261,29 +335,44 @@ def insights():
 @app.get("/dashboard", response_class=FileResponse)
 def dashboard():
     """Serve dashboard HTML"""
+    dashboard_path = "app/static/dashboard.html"
     try:
-        # Read the file and return it
-        with open("app/static/dashboard.html", "r") as f:
-            html_content = f.read()
-        from fastapi.responses import HTMLResponse
-        return HTMLResponse(content=html_content)
+        if not os.path.exists(dashboard_path):
+            return {"error": f"Dashboard not found at {dashboard_path}"}
+        return FileResponse(dashboard_path, media_type="text/html")
     except Exception as e:
         print(f"❌ Dashboard error: {str(e)}")
-        return {"error": f"Dashboard error: {str(e)}"}
+        return {"error": f"Failed to load dashboard: {str(e)}"}
+
 
 @app.get("/dashboard-data")
-def dashboard_data():
+def dashboard_data(api_key: str = None):
     """Get dashboard data as JSON"""
     conn = sqlite3.connect(DB_NAME)
     c = conn.cursor()
 
     try:
-        c.execute("""
-            SELECT gpu_utilization, memory_used, temperature, cost
-            FROM metrics
-            ORDER BY timestamp DESC
-            LIMIT 100
-        """)
+        if api_key:
+            # Validate API key
+            user_id = validate_api_key(api_key)
+            if not user_id:
+                raise HTTPException(status_code=401, detail="Invalid API key")
+            
+            # Get user's metrics
+            c.execute("""
+                SELECT gpu_utilization, memory_used, temperature, cost
+                FROM metrics
+                WHERE user_id = ?
+                ORDER BY timestamp DESC
+                LIMIT 100
+            """, (user_id,))
+        else:
+            c.execute("""
+                SELECT gpu_utilization, memory_used, temperature, cost
+                FROM metrics
+                ORDER BY timestamp DESC
+                LIMIT 100
+            """)
 
         rows = c.fetchall()
 
@@ -341,7 +430,8 @@ def create_user(email: str = "user@example.com"):
             "user_id": user_id,
             "api_key": api_key,
             "email": email,
-            "plan": "free"
+            "plan": "free",
+            "message": "Use this API key with benergy-agent"
         }
     except Exception as e:
         return {"error": str(e)}
@@ -387,5 +477,5 @@ async def contact(data: dict):
 
 if __name__ == "__main__":
     import uvicorn
-    print("\n✅ Starting Benergy API v4.0...\n")
+    print("\n✅ Starting Benergy API v4.1 with Agent Support...\n")
     uvicorn.run(app, host="0.0.0.0", port=8000)
